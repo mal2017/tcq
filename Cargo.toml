@@ -1,0 +1,14 @@
+[package]
+name = "tcq"
+version = "0.1.0"
+authors = ["mattlawlor <matt.a.lawlor@gmail.com>"]
+
+[dependencies]
+clap = {version = "~2.27.0", features = ["yaml"]}
+bio = "*"
+indicatif = "*"
+rust-htslib = "*"
+rayon = "1.0"
+csv = "1"
+ndarray={version = "0.11.2", features = ["serde-1"]}
+serde="*"
