@@ -19,15 +19,10 @@ fn main() {
                                .help("bam to use")
                                .required(true)
                                .index(1))
-                          .arg(Arg::with_name("FASTA")
-                               .help("genome fasta to use")
-                               .required(true)
-                               .index(2))
                           .arg(Arg::with_name("TAG")
                           	   .help("tag to store tc conversion number")
                           	   .short("t")
                           	   .long("tag")
-                          	   .required(true)
                           	   .takes_value(true))
                           .arg(Arg::with_name("THREADS")
                           	   .help("threads to use")
@@ -37,7 +32,6 @@ fn main() {
                           .get_matches();
 
     let bam_file: &str = matches.value_of("BAM").unwrap();
-    let fasta_file: &str = matches.value_of("FASTA").unwrap();
     let tag: &str = matches.value_of("TAG").unwrap_or("ZX");
     let threads: usize = matches.value_of("THREADS").unwrap_or("1").parse().unwrap();
 
@@ -45,6 +39,6 @@ fn main() {
     // TODO: Check fasta is indexed
     // TODO: Check tag starts with X, Y, or Z
 
-    runner::run_through_bam(bam_file, tag, fasta_file, threads);
+    runner::run_through_bam(bam_file, tag, threads);
     
 }
