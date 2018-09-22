@@ -5,7 +5,8 @@ use rayon::ThreadPoolBuilder;
 use std::path::Path;
 use std::str;
 use bio::utils;
-use super::handler;
+use super::handler::*;
+use super::handler::Nascent;
 use rayon::iter::ParallelBridge;
 use rayon::prelude::ParallelIterator;
 //use std::io::prelude::*;
@@ -29,10 +30,11 @@ pub fn run_through_bam(ib: &str, tag: &str, p: usize) {
 	let read_itr = bam.records().par_bridge();
 
 	read_itr.map(|a| a.unwrap())
-			.filter(|a| a.aux(b"NM").unwrap().integer() > 0)
+			.filter(|a| a.mutated())
+			.map(|a| a.ref_seq())
 			.for_each(drop);
 
-	println!("{:?}", ct);
+	
 	//while let Ok(_x) = bam.read(&mut bam_rec) {
 		//aux_md = String::from_utf8(bam_rec.aux(b"MD")
 		//								  .unwrap()
