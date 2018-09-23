@@ -13,3 +13,4 @@ csv = "1"
 ndarray={version = "0.11.2", features = ["serde-1"]}
 serde="*"
 regex="1"
+lazy_static="*"

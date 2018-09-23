@@ -1,4 +1,5 @@
-use regex::Regex;
+use regex::{Regex, Replacer};
+use regex::RegexSet;
 use rust_htslib::bam::record::Record;
 
 // TODO useful error if no tags, handle if unaligned
@@ -11,7 +12,7 @@ pub fn has_var(md: &String) -> bool {
 	// chew up with enzyme from circle seq
 }
 
-pub trait Nascent<T> {
+pub trait Nascent {
 	fn mutated(&self) -> bool;
 
 	fn ref_seq(&self) -> String;
@@ -19,7 +20,7 @@ pub trait Nascent<T> {
 	fn md_tag(&self) -> String;
 }
 
-impl Nascent<Record> for Record {
+impl Nascent for Record {
 	fn mutated(&self) -> bool {
 		
 		self.aux(b"NM").unwrap().integer() > 0
@@ -34,13 +35,43 @@ impl Nascent<Record> for Record {
 	}
 
 	fn ref_seq(&self) -> String {
-		self.md_tag()
+		md_expanded(&mut self.md_tag());
 		// get idx
+		"a".to_string()
 	}
 
 }
 
+fn md_expanded(md: &String) {
 
-//fn md2ref() {
-//	let re = Regex::new()
-//}
+	replace_matches(md);
+}
+
+
+fn replace_matches(md: &String) {
+	let mut orig = md.clone();
+	lazy_static! { // for speeeeed
+		static ref re_perf: Regex  = Regex::new(r"\d+").unwrap();
+	}
+	let mut m;
+	let mut expanded = false;
+	let mut n: usize;
+	let mut exp;
+	let mut new;
+
+	while !expanded  {
+		m = re_perf.find(&orig).unwrap();
+		n = m.as_str().parse().unwrap();
+		exp = "M".repeat(n);
+		new = orig.clone();
+		replace_match1(&mut orig,m.start(),m.end(),&exp);
+		//orig = new;
+		//println!("{:?} {:?}",md,orig);
+		expanded = true;
+	}
+	
+}
+
+fn replace_match1(orig: &mut String, start: usize, end: usize, repl: &String) {
+	orig.replace_range(start..end,repl);
+}
