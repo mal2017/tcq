@@ -18,20 +18,22 @@ pub fn run_through_bam(ib: &str, tag: &str, p: usize) {
 	let mut bam = bam::Reader::from_path(ib).unwrap();
 	let hdr = bam.header().to_owned();
 
-	bam.set_threads(1);
+	bam.set_threads(p);
 	
 	let mut bam_rec = bam::Record::new();
 	let mut aux_md: String;
 	let mut has_var: bool;
 	let mut aux_nm: i64;
 
-	ThreadPoolBuilder::new().num_threads(p-1).build_global().unwrap();
+	//ThreadPoolBuilder::new().num_threads(2).build_global().unwrap();
 	
-	let read_itr = bam.records().par_bridge();
+	//let read_itr = bam.records().par_bridge();
+	let read_itr = bam.records().into_iter();
 
 	read_itr.map(|a| a.unwrap())
 			.filter(|a| a.mutated())
 			.map(|a| a.ref_seq())
+			//.map(|a| {println!("{:?}",a);a})
 			.for_each(drop);
 
 	
