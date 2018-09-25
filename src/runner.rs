@@ -36,21 +36,5 @@ pub fn run_through_bam(ib: &str, tag: &str, p: usize) {
 			//.map(|a| {println!("{:?}",a);a})
 			.for_each(drop);
 
-	
-	//while let Ok(_x) = bam.read(&mut bam_rec) {
-		//aux_md = String::from_utf8(bam_rec.aux(b"MD")
-		//								  .unwrap()
-		//								  .string()
-		//								  .to_owned())
-		//								  .unwrap();
 
-		//aux_nm = bam_rec.aux(b"NM").unwrap().integer();
-
-		//println!("{:?}", aux_nm);
-		//has_var = handler::has_var(&aux_md);
-		//println!("{:?} : {:?}", aux_md, has_var);
-
-		//println!("{:?}", aux_md);
-		
-	//}	
 }
