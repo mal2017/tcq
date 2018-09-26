@@ -5,26 +5,35 @@ use super::expander::md_expanded;
 
 // TODO useful error if no tags, handle if unaligned
 
-pub fn has_var(md: &String) -> bool {
-	let nums_re =  Regex::new(r"\D").unwrap();
-	nums_re.is_match(md)
-	// circle seq, insert biotinylated bases
-	// circularize and ligate ends
-	// chew up with enzyme from circle seq
-}
 
 pub trait Nascent {
 	fn mutated(&self) -> bool;
 
-	fn ref_seq(&self) -> String;
+	fn md_ref_seq(&self) -> String;
 
 	fn md_tag(&self) -> String;
+
+	fn get_tc_mismatch_pos(&self) -> Vec<usize>;
 }
 
 impl Nascent for Record {
 	fn mutated(&self) -> bool {
 		
-		self.aux(b"NM").unwrap().integer() > 0
+		lazy_static! { // for speeeeed
+			static ref revr_re: Regex  = Regex::new(r"A").unwrap();
+			static ref forw_re: Regex  = Regex::new(r"T").unwrap();
+		}
+
+		let md = self.md_tag();
+
+		match self.is_reverse() {
+			true => {
+				revr_re.is_match(&md) //A>>G
+			},
+			false => {
+				forw_re.is_match(&md) //T>>C
+			},
+		}
 	}
 
 	fn md_tag(&self) -> String {
@@ -35,9 +44,17 @@ impl Nascent for Record {
 							  .unwrap()
 	}
 
-	fn ref_seq(&self) -> String {
+	fn md_ref_seq(&self) -> String {
 		md_expanded(self.md_tag())
 	}
 
+	fn get_tc_mismatch_pos(&self) -> Vec<usize> {
+		
+
+		let exp_md = self.md_ref_seq();
+
+
+		vec![1,2,3]
+	}
 }
 

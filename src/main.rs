@@ -14,7 +14,7 @@ fn main() {
 	let matches = App::new("tcq")
                           .version("0.0.9999")
                           .author("Matt Lawlor <matt.a.lawlor@gmail.com>")
-                          .about("T>>C conversion util")
+                          .about("T>>C conversion annotation util. Adds valid T>>C conversions to tag of your choice. Requires paired end data with reverse complemented minus strand sequences. Requires NM and MD tags present in each aligned record.")
                           .arg(Arg::with_name("BAM")
                                .help("bam to use")
                                .required(true)
@@ -38,7 +38,9 @@ fn main() {
     // TODO: Check files are valid
     // TODO: Check fasta is indexed
     // TODO: Check tag starts with X, Y, or Z
+    // TODO: check revcomp
 
     runner::run_through_bam(bam_file, tag, threads);
     
 }
+

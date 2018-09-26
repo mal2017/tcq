@@ -41,7 +41,7 @@ fn replaced_match1(orig: &String, start: usize, end: usize, repl: &String) -> St
 
 fn replace_dels(md: String) -> String {
 	let mut orig = md.clone();
-		lazy_static! { // for speeeeed
+	lazy_static! { // for speeeeed
 		static ref re_del: Regex  = Regex::new(r"\^\D+").unwrap();
 	}
 	let mut m;
