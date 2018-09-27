@@ -27,10 +27,12 @@ pub fn run_through_bam(ib: &str, tag: &str, p: usize) {
 	// TODO check bits for revcomp set on - strand reads
 	// TODO make interval tree lookup for vcf filter
 	read_itr.map(|a| a.unwrap())
-			.filter(|a| a.mutated())
-			.map(|a| a.get_tc_mismatch_pos())
-			//.map(|a| {println!("{:?}",a);a})
+			.filter(|a| a.is_possible_nascent())
+			//.map(|a| {println!("md tag: {}\t",a.md_ref_seq());a})
+			//.map(|a| {println!("read  : {}\t",str::from_utf8(&a.seq().as_bytes()).unwrap());a})
+			.map(|a| a.tc_conversions())
+			.filter(|a| a > &0)
+			.map(|a| {println!("conversions: {:?}\n",a);a})
 			.for_each(drop);
-
-
 }
+
