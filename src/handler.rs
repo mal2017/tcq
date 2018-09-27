@@ -1,9 +1,7 @@
 
-use regex::{Regex, Replacer};
-use rust_htslib::bam::record::{Record, Seq};
+use regex::{Regex};
+use rust_htslib::bam::record::{Record, Aux};
 use super::expander::md_expanded;
-
-// TODO useful error if no tags, handle if unaligned
 
 pub trait Nascent {
 	fn is_possible_nascent(&self) -> bool;
@@ -19,10 +17,15 @@ pub trait Nascent {
 	fn tc_conversion_pos(&self) -> Vec<((u32,u32),bool)>;
 
 	fn tc_conversions(&self) -> u32;
+
+	fn push_tc_conv_aux(&mut self, auxtag: &[u8]) -> Result<(), NascentMolError>;
 }
 
 impl Nascent for Record {
 	fn is_possible_nascent(&self) -> bool {
+		// TODO check reads have md tags,unless unmapped
+		// TODO check bits for revcomp set on - strand reads
+		if self.is_unmapped() { return false };
 		
 		lazy_static! { // for speeeeed
 			static ref revr_re: Regex  = Regex::new(r"A").unwrap();
@@ -61,7 +64,7 @@ impl Nascent for Record {
 
 		let exp_md = self.md_ref_seq();
 
-				match self.is_reverse() {
+		match self.is_reverse() {
 			true => {
 				a_re.find_iter(&exp_md).map(|a| a.start() as u32).collect() //A>>G
 			},
@@ -85,6 +88,7 @@ impl Nascent for Record {
 	}
 
 	fn tc_conversion_pos(&self) -> Vec<((u32,u32),bool)> {
+		// TODO vcf/bcf filtering here
 		let cand_pos_tuples = self.cand_tc_mismatch_pos_tuples();
 
 		let read_seq = self.seq();
@@ -97,7 +101,7 @@ impl Nascent for Record {
 
 		let enc_base_hit_itr = cand_pos_tuples.iter()
 												.map(|a| a.0 as usize) // get read pos
-												.map(|a| read_seq.encoded_base(a))
+												.map(|a| read_seq.as_bytes()[a])
 												.map(|a| a == conv_target);
 
 		cand_pos_tuples.clone().into_iter()
@@ -109,8 +113,41 @@ impl Nascent for Record {
 
 	fn tc_conversions(&self) -> u32 {
 		self.tc_conversion_pos().iter()
-								.filter(|a| a.1)
 								.count() as u32
 	}
+
+
+	fn push_tc_conv_aux(&mut self, auxtag: &[u8]) -> Result<(), NascentMolError> {
+
+		if !self.is_possible_nascent() {
+			match self.push_aux(auxtag, &Aux::Integer(0)) {
+				Ok(_i) => {
+					return Ok(())
+				},
+				Err(_i) => {
+					return Err(NascentMolError::Some)
+				},
+			}
+		}
+		let tc_aux = Aux::Integer(self.tc_conversions() as i64);
+		match self.push_aux(auxtag, &tc_aux) {
+			Ok(_i) => {
+				Ok(())
+			},
+			Err(_i) => {
+				Err(NascentMolError::Some)
+			},
+		}
+	}
+
+}
+
+quick_error! {
+    #[derive(Debug, Clone)]
+    pub enum NascentMolError {
+        Some {
+            description("error finding or pushing tc conv info")
+        }
+    }
 }
 

@@ -1,38 +1,40 @@
 use rust_htslib::bam;
 use rust_htslib::prelude::*;
-use bio::io::fasta;
-use std::path::Path;
 use std::str;
-use bio::utils;
-use super::handler::*;
 use super::handler::Nascent;
 //use std::io::prelude::*;
 
-pub fn run_through_bam(ib: &str, tag: &str, p: usize) {
+pub fn run_through_bam(ib: &str, ob: &str, tag: &str, p: usize) {
 
-	// TODO check reads have md tags,unless unmapped
+	
+	info!("opening bams...");
+	
 	// https://github.com/vsbuffalo/devnotes/wiki/The-MD-Tag-in-BAM-Files
 	let mut bam = bam::Reader::from_path(ib).unwrap();
-	let hdr = bam.header().to_owned();
+	let hdr = bam::header::Header::from_template(bam.header());
+	let mut obam = bam::Writer::from_path(ob, &hdr).unwrap();
 
-	bam.set_threads(p);
-	
-	let mut bam_rec = bam::Record::new();
-	let mut aux_md: String;
-	let mut has_var: bool;
-	let mut aux_nm: i64;
+	info!("setting thread usage...");
 
-	let read_itr = bam.records().into_iter();
+	if p >= 2 {
+		let p2 = if (p % 2) == 0 {
+			p / 2
+		} else {
+			(p - 1) / 2
+		};
+		bam.set_threads(p2).unwrap();
+		obam.set_threads(p-p2).unwrap();
+	} else {
+		bam.set_threads(1).unwrap();
+		obam.set_threads(1).unwrap();
+	}
 
-	// TODO check bits for revcomp set on - strand reads
+	info!("annotating reads with t>>c conversions...");
 	// TODO make interval tree lookup for vcf filter
-	read_itr.map(|a| a.unwrap())
-			.filter(|a| a.is_possible_nascent())
-			//.map(|a| {println!("md tag: {}\t",a.md_ref_seq());a})
-			//.map(|a| {println!("read  : {}\t",str::from_utf8(&a.seq().as_bytes()).unwrap());a})
-			.map(|a| a.tc_conversions())
-			.filter(|a| a > &0)
-			.map(|a| {println!("conversions: {:?}\n",a);a})
-			.for_each(drop);
+	bam.records().into_iter()
+				.map(|a| a.unwrap())
+				.map(|mut a| {a.push_tc_conv_aux(tag.as_bytes()).unwrap();a})
+				.map(|a| obam.write(&a).unwrap())
+				.for_each(drop);
 }
 

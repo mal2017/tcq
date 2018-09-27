@@ -1,4 +1,4 @@
-use regex::{Regex, Replacer};
+use regex::{Regex};
 
 pub fn md_expanded(md: String) -> String {
 	replace_matches(
@@ -8,14 +8,14 @@ pub fn md_expanded(md: String) -> String {
 
 
 fn replace_matches(md: String) -> String {
-	let mut orig = md.clone();
+	let orig = md.clone();
 	lazy_static! { // for speeeeed
 		static ref re_perf: Regex  = Regex::new(r"\d+").unwrap();
 	}
-	let mut m;
-	let mut n: usize;
-	let mut exp;
-	let mut new: String = orig.clone();
+	let m;
+	let n: usize;
+	let exp;
+	let new: String; // = orig.clone();
 
 	m = re_perf.find(&md);
 
@@ -40,14 +40,14 @@ fn replaced_match1(orig: &String, start: usize, end: usize, repl: &String) -> St
 }
 
 fn replace_dels(md: String) -> String {
-	let mut orig = md.clone();
+	let orig = md.clone();
 	lazy_static! { // for speeeeed
 		static ref re_del: Regex  = Regex::new(r"\^\D+").unwrap();
 	}
-	let mut m;
-	let mut n: usize;
-	let mut exp;
-	let mut new: String = orig.clone();
+	let m;
+	let n: usize;
+	let exp;
+	let new: String;// = orig.clone();
 
 	m = re_del.find(&md);
 
