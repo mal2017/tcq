@@ -2,13 +2,21 @@ use rust_htslib::bam;
 use rust_htslib::prelude::*;
 use std::str;
 use super::handler::Nascent;
+use super::filter::*;
 //use std::io::prelude::*;
 
-pub fn run_through_bam(ib: &str, ob: &str, tag: &str, p: usize) {
+pub fn run_through_bam(ib: &str, ob: &str, tag: &str, p: usize, blk: Option<&str>) {
 
-	
+	let filt: Option<ConvFilter> = match blk {
+		Some(b) => {
+			info!("creating blacklist filter...");
+			Some(ConvFilter::from_vcf_path(b, p).unwrap())
+		},
+		None => None,
+	};
+
+
 	info!("opening bams...");
-	
 	// https://github.com/vsbuffalo/devnotes/wiki/The-MD-Tag-in-BAM-Files
 	let mut bam = bam::Reader::from_path(ib).unwrap();
 	let hdr = bam::header::Header::from_template(bam.header());
@@ -31,10 +39,10 @@ pub fn run_through_bam(ib: &str, ob: &str, tag: &str, p: usize) {
 
 	info!("annotating reads with t>>c conversions...");
 	// TODO make interval tree lookup for vcf filter
-	bam.records().into_iter()
+	// TODO optimize  mapping and pusing, maybe use mut iter
+	/*bam.records().into_iter()
 				.map(|a| a.unwrap())
 				.map(|mut a| {a.push_tc_conv_aux(tag.as_bytes()).unwrap();a})
 				.map(|a| obam.write(&a).unwrap())
-				.for_each(drop);
+				.for_each(drop);*/
 }
-

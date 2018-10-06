@@ -12,11 +12,12 @@ use std::env::set_var;
 fn main() {
 	use clap::{Arg, App};
 	use tcq::runner;
+	use tcq::filter;
 
 
 
 	let matches = App::new("tcq")
-                          .version("0.1.0")
+                          .version("0.1.1")
                           .author("Matt Lawlor <matt.a.lawlor@gmail.com>")
                           .about("T>>C conversion annotation util for working with nascent RNA species.\nAdds valid T>>C conversions to tag of your choice.\nRequires revcomp (-) seqs & MD tags.")
                           .arg(Arg::with_name("IBAM")
@@ -27,6 +28,11 @@ fn main() {
                                .help("bam to write")
                                .required(true)
                                .index(2))
+						  .arg(Arg::with_name("BLKLIST")
+					  			.help("vcf, bcf, bed, or gff with blacklisted sites")
+								.short("b")
+								.long("blacklist")
+								.takes_value(true))
                           .arg(Arg::with_name("TAG")
                           	   .help("tag to store tc conversion number")
                           	   .short("t")
@@ -62,16 +68,20 @@ fn main() {
     let obam_file: &str = matches.value_of("OBAM").unwrap();
     let tag: &str = matches.value_of("TAG").unwrap_or("ZX");
     let threads: usize = matches.value_of("THREADS").unwrap_or("1").parse().unwrap();
+	let blk: Option<&str> = matches.value_of("BLKLIST");
 
     info!("arguments parsed...");
     info!("beginning run...");
     // TODO: Check files are valid
+	// TODO: mapq
+	// TODO: per base phred cutoff
+	// TODO: check md tag exists
     // TODO: Check tag starts with X, Y, or Z
 	// TODO: Check tag not already in use
 	// TODO: add force option if already in use
     // TODO: check revcomp
 
-    runner::run_through_bam(bam_file, obam_file, tag, threads);
+    runner::run_through_bam(bam_file, obam_file, tag, threads, blk);
 
     info!("tcq run complete");
 }
