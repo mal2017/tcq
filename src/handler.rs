@@ -6,6 +6,8 @@ use super::filter::ConvFilter;
 use std::collections::HashMap;
 use std::str;
 use rust_htslib::bam::HeaderView;
+use std::ops::Range;
+use bio::utils::Interval;
 
 pub trait Nascent {
 	fn is_possible_nascent(&self) -> bool;
@@ -93,12 +95,23 @@ impl Nascent for Record {
 
 	fn tc_conversion_pos(&self, f: &Option<ConvFilter>, h: &HashMap<u32, String>) -> Vec<((u32,u32),bool)> {
 		// TODO vcf/bcf filtering here
+		// TODO check oncoordinates for dels, ins, am i doing it right when i retu
+		// retrieve read seq from cigar
 		let mut cand_pos_tuples = self.cand_tc_mismatch_pos_tuples();
-
+		let mut rng: Range<u32> = Range {start:0,end:0};
+		let mut chr = h.get(&(self.tid() as u32)).unwrap();
+		let it;
 
 		cand_pos_tuples = match f {
 			Some(k) => {
-				cand_pos_tuples.into_iter().collect()
+				it = k.inner.clone().unwrap();
+				cand_pos_tuples.into_iter()
+							   .filter(|a| {
+								   rng = Range { start: a.1, end: a.1 + 1 };
+								   it.get(chr).unwrap().find(&rng).count() == 0
+								   //true
+							   })
+								.collect()
 			},
 			None => cand_pos_tuples,
 		};

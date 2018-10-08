@@ -9,7 +9,7 @@ use core::ops::Range;
 
 #[derive(Debug)]
 pub struct ConvFilter {
-    inner: Option<HashMap<String, IntervalTree<u32, u32>>>,
+    pub inner: Option<HashMap<String, IntervalTree<u32, u32>>>,
 }
 
 impl ConvFilter {
