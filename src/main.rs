@@ -71,7 +71,6 @@ fn main() {
 	let blk: Option<&str> = matches.value_of("BLKLIST");
 
     info!("arguments parsed...");
-    info!("beginning run...");
     // TODO: Check files are valid
 	// TODO: mapq
 	// TODO: per base phred cutoff

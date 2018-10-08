@@ -4,6 +4,8 @@ use rust_htslib::bam;
 use std::collections::HashMap;
 use bio::utils::Interval;
 use rust_htslib::bcf::Read;
+use std::str;
+use core::ops::Range;
 
 #[derive(Debug)]
 pub struct ConvFilter {
@@ -12,10 +14,34 @@ pub struct ConvFilter {
 
 impl ConvFilter {
     pub fn from_vcf_path(v: &str, p: usize) -> Result<Self, ConvFilError> {
-        let mut blank: HashMap<String, IntervalTree<u32, u32>> = HashMap::new();
+        info!("creating blacklist filter...");
+        let mut blank: HashMap<String, IntervalTree<u32, u32>> = HashMap::with_capacity(100);
         let mut vcf = bcf::Reader::from_path(v).unwrap();
-        vcf.set_threads(p);
+        vcf.set_threads(p).unwrap();
+        let hdr = vcf.header().to_owned();
 
+        let mut vcf_records = vcf.records();
+
+        let mut record: bcf::record::Record;
+        let mut pos: u32;
+        //let mut rng: Range<u32>;
+        let mut chrom: String;
+
+        // https://doc.rust-lang.org/std/collections/hash_map/enum.Entry.html
+        while let Some(r) =  vcf_records.next() {
+            record = r.unwrap();
+            chrom = str::from_utf8(hdr.rid2name(record.rid().unwrap())).unwrap().to_owned();
+            pos = record.pos();
+            //rng = Range  {start: pos, end: pos+1};
+
+            blank.entry(chrom)
+                     .and_modify(|a| a.insert(Range  {start: pos, end: pos+1},0))
+                     .or_insert({ let mut a = IntervalTree::new();
+                                  a.insert(Range  {start: pos, end: pos+1},0);
+                                  a
+                                  });
+        };
+        println!("{:?}", blank);
         Ok(
             ConvFilter {
                 inner: None,

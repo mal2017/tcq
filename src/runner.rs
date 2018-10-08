@@ -6,16 +6,13 @@ use super::filter::*;
 //use std::io::prelude::*;
 
 pub fn run_through_bam(ib: &str, ob: &str, tag: &str, p: usize, blk: Option<&str>) {
-
 	let filt: Option<ConvFilter> = match blk {
 		Some(b) => {
-			info!("creating blacklist filter...");
 			Some(ConvFilter::from_vcf_path(b, p).unwrap())
 		},
 		None => None,
 	};
-
-
+	info!("beginning run...");
 	info!("opening bams...");
 	// https://github.com/vsbuffalo/devnotes/wiki/The-MD-Tag-in-BAM-Files
 	let mut bam = bam::Reader::from_path(ib).unwrap();
