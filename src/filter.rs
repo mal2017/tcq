@@ -32,8 +32,6 @@ impl ConvFilter {
             record = r.unwrap();
             chrom = str::from_utf8(hdr.rid2name(record.rid().unwrap())).unwrap().to_owned();
             pos = record.pos();
-            //rng = Range  {start: pos, end: pos+1};
-
             blank.entry(chrom)
                      .and_modify(|a| a.insert(Range  {start: pos, end: pos+1},0))
                      .or_insert({ let mut a = IntervalTree::new();
@@ -41,10 +39,10 @@ impl ConvFilter {
                                   a
                                   });
         };
-        println!("{:?}", blank);
+
         Ok(
             ConvFilter {
-                inner: None,
+                inner: Some(blank),
             }
         )
     }

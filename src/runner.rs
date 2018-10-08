@@ -2,6 +2,7 @@ use rust_htslib::bam;
 use rust_htslib::prelude::*;
 use std::str;
 use super::handler::Nascent;
+use super::handler::tid_2_contig;
 use super::filter::*;
 //use std::io::prelude::*;
 
@@ -14,10 +15,14 @@ pub fn run_through_bam(ib: &str, ob: &str, tag: &str, p: usize, blk: Option<&str
 	};
 	info!("beginning run...");
 	info!("opening bams...");
+
 	// https://github.com/vsbuffalo/devnotes/wiki/The-MD-Tag-in-BAM-Files
 	let mut bam = bam::Reader::from_path(ib).unwrap();
 	let hdr = bam::header::Header::from_template(bam.header());
+	let hdrv = bam.header().to_owned();
 	let mut obam = bam::Writer::from_path(ob, &hdr).unwrap();
+
+	let tid_lookup = tid_2_contig(&hdrv);
 
 	info!("setting thread usage...");
 
@@ -37,9 +42,9 @@ pub fn run_through_bam(ib: &str, ob: &str, tag: &str, p: usize, blk: Option<&str
 	info!("annotating reads with t>>c conversions...");
 	// TODO make interval tree lookup for vcf filter
 	// TODO optimize  mapping and pusing, maybe use mut iter
-	/*bam.records().into_iter()
+	bam.records().into_iter()
 				.map(|a| a.unwrap())
-				.map(|mut a| {a.push_tc_conv_aux(tag.as_bytes()).unwrap();a})
+				.map(|mut a| {a.push_tc_conv_aux(tag.as_bytes(), &filt, &tid_lookup).unwrap();a})
 				.map(|a| obam.write(&a).unwrap())
-				.for_each(drop);*/
+				.for_each(drop);
 }
