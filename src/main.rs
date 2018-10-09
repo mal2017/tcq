@@ -38,6 +38,11 @@ fn main() {
                           	   .short("t")
                           	   .long("tag")
                           	   .takes_value(true))
+						  .arg(Arg::with_name("CONTIG_PREFIX")
+					  		   .help("prefix blacklist contigs with this for quick compatibility")
+						   	   .short("c")
+						   	   .long("contig-prefix")
+						   	   .takes_value(true))
                           .arg(Arg::with_name("THREADS")
                           	   .help("threads to use")
                           	   .short("p")
@@ -69,6 +74,7 @@ fn main() {
     let tag: &str = matches.value_of("TAG").unwrap_or("ZX");
     let threads: usize = matches.value_of("THREADS").unwrap_or("1").parse().unwrap();
 	let blk: Option<&str> = matches.value_of("BLKLIST");
+	let ctg_prefix: &str = matches.value_of("CONTIG_PREFIX").unwrap_or("");
 
     info!("arguments parsed...");
     // TODO: Check files are valid
@@ -80,7 +86,7 @@ fn main() {
 	// TODO: add force option if already in use
     // TODO: check revcomp
 
-    runner::run_through_bam(bam_file, obam_file, tag, threads, blk);
+    runner::run_through_bam(bam_file, obam_file, tag, threads, blk, ctg_prefix);
 
     info!("tcq run complete");
 }

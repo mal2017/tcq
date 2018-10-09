@@ -101,15 +101,18 @@ impl Nascent for Record {
 		let mut rng: Range<u32> = Range {start:0,end:0};
 		let mut chr = h.get(&(self.tid() as u32)).unwrap();
 		let it;
-
 		cand_pos_tuples = match f {
 			Some(k) => {
-				it = k.inner.clone().unwrap();
+				it = &k.inner;
+				//println!("{:?}", it.keys());
 				cand_pos_tuples.into_iter()
 							   .filter(|a| {
 								   rng = Range { start: a.1, end: a.1 + 1 };
-								   it.get(chr).unwrap().find(&rng).count() == 0
-								   //true
+								   match it.get(chr) {
+									   Some(j) => {j.find(&rng).any(|a| true)},
+									   None => true,
+								   }
+								   // filter for blacklist overlap
 							   })
 								.collect()
 			},

@@ -6,10 +6,10 @@ use super::handler::tid_2_contig;
 use super::filter::*;
 //use std::io::prelude::*;
 
-pub fn run_through_bam(ib: &str, ob: &str, tag: &str, p: usize, blk: Option<&str>) {
+pub fn run_through_bam(ib: &str, ob: &str, tag: &str, p: usize, blk: Option<&str>, pfx: &str) {
 	let filt: Option<ConvFilter> = match blk {
 		Some(b) => {
-			Some(ConvFilter::from_vcf_path(b, p).unwrap())
+			Some(ConvFilter::from_vcf_path(b, p, pfx).unwrap())
 		},
 		None => None,
 	};

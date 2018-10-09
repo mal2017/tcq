@@ -9,11 +9,11 @@ use core::ops::Range;
 
 #[derive(Debug)]
 pub struct ConvFilter {
-    pub inner: Option<HashMap<String, IntervalTree<u32, u32>>>,
+    pub inner: HashMap<String, IntervalTree<u32, u32>>,
 }
 
 impl ConvFilter {
-    pub fn from_vcf_path(v: &str, p: usize) -> Result<Self, ConvFilError> {
+    pub fn from_vcf_path(v: &str, p: usize, pfx: &str) -> Result<Self, ConvFilError> {
         info!("creating blacklist filter...");
         let mut blank: HashMap<String, IntervalTree<u32, u32>> = HashMap::with_capacity(100);
         let mut vcf = bcf::Reader::from_path(v).unwrap();
@@ -30,7 +30,8 @@ impl ConvFilter {
         // https://doc.rust-lang.org/std/collections/hash_map/enum.Entry.html
         while let Some(r) =  vcf_records.next() {
             record = r.unwrap();
-            chrom = str::from_utf8(hdr.rid2name(record.rid().unwrap())).unwrap().to_owned();
+            chrom = format!("{}{}",pfx,str::from_utf8(hdr.rid2name(record.rid().unwrap())).unwrap().to_owned());
+            //println!("{:?}", chrom);
             pos = record.pos();
             blank.entry(chrom)
                      .and_modify(|a| a.insert(Range  {start: pos, end: pos+1},0))
@@ -39,10 +40,9 @@ impl ConvFilter {
                                   a
                                   });
         };
-
         Ok(
             ConvFilter {
-                inner: Some(blank),
+                inner: blank,
             }
         )
     }
