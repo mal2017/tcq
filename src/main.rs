@@ -43,6 +43,11 @@ fn main() {
 						   	   .short("c")
 						   	   .long("contig-prefix")
 						   	   .takes_value(true))
+						  .arg(Arg::with_name("MAPQ")
+					  		   .help("MAPQ must be greater than OR EQUAL TO provided cutoff; default 0")
+						   	   .long("mapq")
+						   	   .short("m")
+						   	   .takes_value(true))
                           .arg(Arg::with_name("THREADS")
                           	   .help("threads to use")
                           	   .short("p")
@@ -73,6 +78,7 @@ fn main() {
     let obam_file: &str = matches.value_of("OBAM").unwrap();
     let tag: &str = matches.value_of("TAG").unwrap_or("ZX");
     let threads: usize = matches.value_of("THREADS").unwrap_or("1").parse().unwrap();
+	let mapq: u8 = matches.value_of("MAPQ").unwrap_or("0").parse().unwrap();
 	let blk: Option<&str> = matches.value_of("BLKLIST");
 	let ctg_prefix: &str = matches.value_of("CONTIG_PREFIX").unwrap_or("");
 
@@ -86,7 +92,7 @@ fn main() {
 	// TODO: add force option if already in use
     // TODO: check revcomp
 
-    runner::run_through_bam(bam_file, obam_file, tag, threads, blk, ctg_prefix);
+    runner::run_through_bam(bam_file, obam_file, tag, threads, blk, ctg_prefix, mapq);
 
     info!("tcq run complete");
 }

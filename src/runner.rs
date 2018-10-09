@@ -6,7 +6,7 @@ use super::handler::tid_2_contig;
 use super::filter::*;
 //use std::io::prelude::*;
 
-pub fn run_through_bam(ib: &str, ob: &str, tag: &str, p: usize, blk: Option<&str>, pfx: &str) {
+pub fn run_through_bam(ib: &str, ob: &str, tag: &str, p: usize, blk: Option<&str>, pfx: &str, mq: u8) {
 	let filt: Option<ConvFilter> = match blk {
 		Some(b) => {
 			Some(ConvFilter::from_vcf_path(b, p, pfx).unwrap())
@@ -44,6 +44,7 @@ pub fn run_through_bam(ib: &str, ob: &str, tag: &str, p: usize, blk: Option<&str
 	// TODO optimize  mapping and pusing, maybe use mut iter
 	bam.records().into_iter()
 				.map(|a| a.unwrap())
+				.filter(|a| a.mapq() >= mq )
 				.map(|mut a| {a.push_tc_conv_aux(tag.as_bytes(), &filt, &tid_lookup).unwrap();a})
 				.map(|a| obam.write(&a).unwrap())
 				.for_each(drop);
