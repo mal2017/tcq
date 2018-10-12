@@ -12,9 +12,6 @@ use std::env::set_var;
 fn main() {
 	use clap::{Arg, App};
 	use tcq::runner;
-	use tcq::filter;
-
-
 
 	let matches = App::new("tcq")
                           .version("0.1.1")

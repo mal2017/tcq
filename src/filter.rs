@@ -2,7 +2,6 @@ use bio::data_structures::interval_tree::IntervalTree;
 use rust_htslib::bcf;
 use rust_htslib::bam;
 use std::collections::HashMap;
-use bio::utils::Interval;
 use rust_htslib::bcf::Read;
 use std::str;
 use core::ops::Range;
