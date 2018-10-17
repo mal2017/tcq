@@ -26,7 +26,7 @@ fn main() {
                                .required(true)
                                .index(2))
 						  .arg(Arg::with_name("BLKLIST")
-					  			.help("vcf, bcf, bed, or gff with blacklisted sites")
+					  			.help("vcf, bcf with blacklisted sites")
 								.short("b")
 								.long("blacklist")
 								.takes_value(true))
