@@ -14,7 +14,7 @@ fn main() {
 	use tcq::runner;
 
 	let matches = App::new("tcq")
-                          .version("0.1.1")
+                          .version("0.1.2")
                           .author("Matt Lawlor <matt.a.lawlor@gmail.com>")
                           .about("Util for SLAM-/Timelapse-seq. Adds valid T>>C conversions to tag of your choice.\nRequires revcomp (-) seqs & MD tags.")
                           .arg(Arg::with_name("IBAM")
@@ -26,7 +26,7 @@ fn main() {
                                .required(true)
                                .index(2))
 						  .arg(Arg::with_name("BLKLIST")
-					  			.help("vcf, bcf with blacklisted sites")
+					  			.help("indexed vcf or bcf with blacklisted sites")
 								.short("b")
 								.long("blacklist")
 								.takes_value(true))

@@ -27,10 +27,10 @@ impl ConvFilter {
         let mut chrom: String;
 
         // https://doc.rust-lang.org/std/collections/hash_map/enum.Entry.html
+        // TODO refactor this to take beds as well
         while let Some(r) =  vcf_records.next() {
             record = r.unwrap();
             chrom = format!("{}{}",pfx,str::from_utf8(hdr.rid2name(record.rid().unwrap())).unwrap().to_owned());
-            //println!("{:?}", chrom);
             pos = record.pos();
             blank.entry(chrom)
                      .and_modify(|a| a.insert(Range  {start: pos, end: pos+1},0))

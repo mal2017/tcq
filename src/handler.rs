@@ -99,20 +99,22 @@ impl Nascent for Record {
 		let mut cand_pos_tuples = self.cand_tc_mismatch_pos_tuples();
 		let mut rng: Range<u32> = Range {start:0,end:0};
 		let chr = h.get(&(self.tid() as u32)).unwrap();
+		let refpos = self.pos() as u32;
 		let it;
-
 		// BELOW THIS IS THE FILTERING PORTION
+		//println!("{:?}", cand_pos_tuples);
 		cand_pos_tuples = match f {
 			Some(k) => {
 				it = &k.inner;
 				cand_pos_tuples.into_iter()
-							   .filter(|a| !{
-								   rng = Range { start: a.1, end: a.1 + 1 };
+							   .filter(|a| !{ // negate false if overlap w. filt returns anything
+								   rng = Range { start: refpos + a.1, end: refpos + a.1 + 1 };
+								   //let ret: bool = it.get(chr).unwrap().find(&rng).any(|_a| true);
+								   //println!("{:?}", ret);
 								   match it.get(chr) {
 									   Some(j) => {j.find(&rng).any(|_a| true)},
 									   None => false,
 								   }
-								   // filter for blacklist overlap
 							   })
 								.collect()
 			},
