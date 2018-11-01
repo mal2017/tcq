@@ -8,6 +8,7 @@ extern crate tcq;
 extern crate env_logger;
 
 use std::env::set_var;
+use tcq::validators::*;
 
 fn main() {
 	use clap::{Arg, App};
@@ -34,7 +35,8 @@ fn main() {
                           	   .help("tag to store tc conversion number")
                           	   .short("t")
                           	   .long("tag")
-                          	   .takes_value(true))
+                          	   .takes_value(true)
+							   .validator(tag_is_reserved_local))
 						  .arg(Arg::with_name("CONTIG_PREFIX")
 					  		   .help("prefix blacklist contigs with this for quick compatibility")
 						   	   .short("c")
