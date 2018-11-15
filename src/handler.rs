@@ -68,7 +68,7 @@ impl Nascent for Record {
 		}
 
 		let exp_md = self.md_ref_seq();
-
+		info!("{}",exp_md);
 		match self.is_reverse() {
 			true => {
 				a_re.find_iter(&exp_md).map(|a| a.start() as u32).collect() //A>>G
@@ -84,9 +84,12 @@ impl Nascent for Record {
 		let cig = self.cigar();
 		let start = self.pos() as u32;
 		let cand_ref_pos = self.cand_tc_mismatch_ref_pos();
-
+		println!("{:?}", cand_ref_pos);
+		println!("{:?}", cig.to_string());
 		cand_ref_pos.iter()
-					.map(|a| cig.read_pos(start + a,true,true))
+					.map(|a| {println!("{:?} + {:?}",start, a); a})
+					.map(|a| cig.read_pos(start + a,false,true))
+					.map(|a| {println!("{:?}", a);a})
 					.map(|a| a.unwrap().unwrap())
 					.zip(cand_ref_pos.clone().into_iter())
 					.collect()
@@ -102,7 +105,6 @@ impl Nascent for Record {
 		let refpos = self.pos() as u32;
 		let it;
 		// BELOW THIS IS THE FILTERING PORTION
-		//println!("{:?}", cand_pos_tuples);
 		cand_pos_tuples = match f {
 			Some(k) => {
 				it = &k.inner;
@@ -160,6 +162,8 @@ impl Nascent for Record {
 				},
 			}
 		}
+		info!("{:?}",self.pos());
+		info!("{:?}",String::from_utf8(self.seq().as_bytes()).unwrap());
 		let tc_aux = Aux::Integer(self.tc_conversions(f, h) as i64);
 		match self.push_aux(auxtag, &tc_aux) {
 			Ok(_i) => {

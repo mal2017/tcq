@@ -1,6 +1,7 @@
 use regex::{Regex};
 
 pub fn md_expanded(md: String) -> String {
+	info!("{:?}",md);
 	replace_matches(
 		replace_dels(md)
 	)
