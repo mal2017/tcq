@@ -12,3 +12,4 @@ pub mod handler;
 pub mod expander;
 pub mod filter;
 pub mod validators;
+pub mod spliced_read_utils;

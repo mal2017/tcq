@@ -3,6 +3,7 @@ use regex::{Regex};
 use rust_htslib::bam::record::{Record, Aux};
 use super::expander::md_expanded;
 use super::filter::ConvFilter;
+use super::spliced_read_utils::*;
 use std::collections::HashMap;
 use std::str;
 use rust_htslib::bam::HeaderView;
@@ -68,7 +69,7 @@ impl Nascent for Record {
 		}
 
 		let exp_md = self.md_ref_seq();
-		info!("{}",exp_md);
+		//info!("{}",exp_md);
 		match self.is_reverse() {
 			true => {
 				a_re.find_iter(&exp_md).map(|a| a.start() as u32).collect() //A>>G
@@ -84,12 +85,8 @@ impl Nascent for Record {
 		let cig = self.cigar();
 		let start = self.pos() as u32;
 		let cand_ref_pos = self.cand_tc_mismatch_ref_pos();
-		println!("{:?}", cand_ref_pos);
-		println!("{:?}", cig.to_string());
 		cand_ref_pos.iter()
-					.map(|a| {println!("{:?} + {:?}",start, a); a})
-					.map(|a| cig.read_pos(start + a,false,true))
-					.map(|a| {println!("{:?}", a);a})
+					.map(|a| cig.read_pos_spliced(start + a,false,true, start))
 					.map(|a| a.unwrap().unwrap())
 					.zip(cand_ref_pos.clone().into_iter())
 					.collect()
@@ -111,8 +108,6 @@ impl Nascent for Record {
 				cand_pos_tuples.into_iter()
 							   .filter(|a| !{ // negate false if overlap w. filt returns anything
 								   rng = Range { start: refpos + a.1, end: refpos + a.1 + 1 };
-								   //let ret: bool = it.get(chr).unwrap().find(&rng).any(|_a| true);
-								   //println!("{:?}", ret);
 								   match it.get(chr) {
 									   Some(j) => {j.find(&rng).any(|_a| true)},
 									   None => false,
@@ -162,8 +157,8 @@ impl Nascent for Record {
 				},
 			}
 		}
-		info!("{:?}",self.pos());
-		info!("{:?}",String::from_utf8(self.seq().as_bytes()).unwrap());
+		//info!("{:?}",self.pos());
+		//info!("{:?}",String::from_utf8(self.seq().as_bytes()).unwrap());
 		let tc_aux = Aux::Integer(self.tc_conversions(f, h) as i64);
 		match self.push_aux(auxtag, &tc_aux) {
 			Ok(_i) => {

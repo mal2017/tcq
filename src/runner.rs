@@ -4,6 +4,7 @@ use std::str;
 use super::handler::Nascent;
 use super::handler::tid_2_contig;
 use super::filter::*;
+use super::spliced_read_utils::SplicedReadCigarStringView;
 //use std::io::prelude::*;
 
 pub fn run_through_bam(ib: &str, ob: &str, tag: &str, p: usize, blk: Option<&str>, pfx: &str, mq: u8) {
