@@ -849,7 +849,7 @@ dependencies = [
 
 [[package]]
 name = "tcq"
-version = "0.1.4"
+version = "0.1.5"
 dependencies = [
  "bio 0.22.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "clap 2.32.0 (registry+https://github.com/rust-lang/crates.io-index)",
