@@ -9,6 +9,7 @@ use std::str;
 use rust_htslib::bam::HeaderView;
 use std::ops::Range;
 
+/// Main engine for T>>C annotation.
 pub trait Nascent {
 	fn is_possible_nascent(&self) -> bool;
 
@@ -28,6 +29,7 @@ pub trait Nascent {
 }
 
 impl Nascent for Record {
+	/// Initial filter that checks MD tag to see if an A or T mismatch exists.
 	fn is_possible_nascent(&self) -> bool {
 		// TODO check reads have md tags,unless unmapped
 		// TODO check bits for revcomp set on - strand reads
@@ -50,6 +52,7 @@ impl Nascent for Record {
 		}
 	}
 
+	/// Pull MD tag from record.
 	fn md_tag(&self) -> String {
 		String::from_utf8(self.aux(b"MD")
 							  .unwrap()
@@ -58,10 +61,14 @@ impl Nascent for Record {
 							  .unwrap()
 	}
 
+	/// Expands the MD tag to a human readable string.
+	///
+	/// See tcq::expander for details.
 	fn md_ref_seq(&self) -> String {
 		md_expanded(self.md_tag())
 	}
 
+	/// Finds candidate T>C positions relative to reference.
 	fn cand_tc_mismatch_ref_pos(&self) -> Vec<u32> {
 		lazy_static! { // for speeeeed
 			static ref a_re: Regex  = Regex::new(r"A").unwrap();
@@ -81,6 +88,7 @@ impl Nascent for Record {
 
 	}
 
+	/// Makes a vector of tuples containing read and reference candidate T>>C positions.
 	fn cand_tc_mismatch_pos_tuples(&self) -> Vec<(u32,u32)> {
 		let cig = self.cigar();
 		let start = self.pos() as u32;
@@ -92,10 +100,8 @@ impl Nascent for Record {
 					.collect()
 	}
 
+	/// Adds a bool to vector of read/ref position tuples.
 	fn tc_conversion_pos(&self, f: &Option<ConvFilter>, h: &HashMap<u32, String>) -> Vec<((u32,u32),bool)> {
-		// TODO vcf/bcf filtering here
-		// TODO check oncoordinates for dels, ins, am i doing it right when i retu
-		// retrieve read seq from cigar
 		let mut cand_pos_tuples = self.cand_tc_mismatch_pos_tuples();
 		let mut rng: Range<u32> = Range {start:0,end:0};
 		let chr = h.get(&(self.tid() as u32)).unwrap();
@@ -139,12 +145,14 @@ impl Nascent for Record {
 
 	}
 
+	/// Counts T>>C positions passing all filters.
 	fn tc_conversions(&self, f: &Option<ConvFilter>, h: &HashMap<u32, String>) -> u32 {
 		self.tc_conversion_pos(f, h).iter()
 								.count() as u32
 	}
 
 
+	/// Edits tags to included T>>C counts.
 	fn push_tc_conv_aux(&mut self, auxtag: &[u8],f: &Option<ConvFilter>, h: &HashMap<u32, String>) -> Result<(), NascentMolError> {
 
 		if !self.is_possible_nascent() {
@@ -157,8 +165,6 @@ impl Nascent for Record {
 				},
 			}
 		}
-		//info!("{:?}",self.pos());
-		//info!("{:?}",String::from_utf8(self.seq().as_bytes()).unwrap());
 		let tc_aux = Aux::Integer(self.tc_conversions(f, h) as i64);
 		match self.push_aux(auxtag, &tc_aux) {
 			Ok(_i) => {
@@ -173,6 +179,7 @@ impl Nascent for Record {
 }
 
 quick_error! {
+	/// Error for T>>C count annotation.
     #[derive(Debug, Clone)]
     pub enum NascentMolError {
         Some {
@@ -182,6 +189,7 @@ quick_error! {
 }
 
 
+/// Creates a map for converting TIDs to chromosome names.
 pub fn tid_2_contig(h: &HeaderView) -> HashMap<u32, String> {
 	let mut dict: HashMap<u32, String> = HashMap::with_capacity(100);
 	for (i,t) in h.target_names()

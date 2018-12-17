@@ -40,11 +40,6 @@ fn main() {
                           	   .long("tag")
                           	   .takes_value(true)
 							   .validator(tag_is_reserved_local))
-						  .arg(Arg::with_name("CONTIG_PREFIX")
-					  		   .help("prefix blacklist contigs with this for quick compatibility")
-						   	   .short("c")
-						   	   .long("contig-prefix")
-						   	   .takes_value(true))
 						  .arg(Arg::with_name("MAPQ")
 					  		   .help("MAPQ must be greater than OR EQUAL TO provided cutoff; default 0")
 						   	   .long("mapq")
@@ -85,16 +80,12 @@ fn main() {
 	let ctg_prefix: &str = matches.value_of("CONTIG_PREFIX").unwrap_or("");
 
     info!("arguments parsed...");
-    // TODO: Check files are valid
-	// TODO: mapq
 	// TODO: per base phred cutoff
 	// TODO: check md tag exists
-    // TODO: Check tag starts with X, Y, or Z
-	// TODO: Check tag not already in use
 	// TODO: add force option if already in use
     // TODO: check revcomp
 
-    runner::run_through_bam(bam_file, obam_file, tag, threads, blk, ctg_prefix, mapq);
+    runner::run_through_bam(bam_file, obam_file, tag, threads, blk, mapq);
 
     info!("tcq run complete");
 }

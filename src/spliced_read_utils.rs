@@ -3,12 +3,17 @@ use rust_htslib::bam::record::{Record, Aux, CigarStringView, Cigar, CigarError};
 use std::str;
 use std::ops::Range;
 
+/// Special struct for dealing with spliced reads.
+///
+/// Modified to handle N CIGARs apppropriately for RNASeq data.
+///
+/// Finds the position within a spliced read.
 pub trait SplicedReadCigarStringView {
     fn read_pos_spliced(&self, ref_pos: u32, include_softclips: bool, include_dels: bool, record_pos: u32) -> Result<Option<u32>, CigarError>;
 }
 
-// This is a modified version of the cigarstringview implementation of rust-htslib
 impl SplicedReadCigarStringView for CigarStringView {
+    /// Trait implementation for regular CigarStringView.
     fn read_pos_spliced(
         &self,
         ref_pos: u32,
