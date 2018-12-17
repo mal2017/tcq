@@ -1,6 +1,5 @@
 use regex::{Regex};
 use std::path::Path;
-use std::ffi::OsStr;
 
 /// Checks that the provided tag for annotated conversion is appropriate per SAM spec.
 pub fn tag_is_reserved_local(a: String) -> Result<(), String> {
@@ -23,8 +22,10 @@ pub fn dir_exists(a: String) -> Result<(), String> {
 }
 
 /// Checks that the input bam seems to exist.
+///
+/// Not guaranteed to work as a validator in all cases.
 pub fn bam_seems_ok(a: String) -> Result<(), String> {
-    /// Not guaranteed to work as a validator in all cases.
+
     let p = Path::new(&a);
 
     match p.is_file() {
@@ -38,8 +39,9 @@ pub fn bam_seems_ok(a: String) -> Result<(), String> {
 }
 
 /// Checks that input vcf/bcf seems to exist and is indexed.
+///
+/// Not guaranteed to work as a validator in all cases.
 pub fn vcf_seems_ok(a: String) -> Result<(), String> {
-    /// Not guaranteed to work as a validator in all cases.
     let p = Path::new(&a);
     let ext = p.extension().unwrap().to_str().unwrap();
     let is_acceptable_ext =  ext == "vcf" || ext == "bcf";

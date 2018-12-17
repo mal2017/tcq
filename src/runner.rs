@@ -4,7 +4,6 @@ use std::str;
 use super::handler::Nascent;
 use super::handler::tid_2_contig;
 use super::filter::*;
-use super::spliced_read_utils::SplicedReadCigarStringView;
 
 /// Iterates through bam records and annotates each read with the T>>C conversion count.
 ///
@@ -18,9 +17,10 @@ use super::spliced_read_utils::SplicedReadCigarStringView;
 /// 1. blk: path to optional indexed vcf/bcf blacklist of individual positions to exclude
 /// 1. mq: minimum read mapq
 ///
-/// # Example (not run)
-/// ```
-/// run_through_bam("in.bam", "out.bam", "XZ", 4, filt.bcf, 30);
+/// # Example (compiled, not run)
+/// ```rust,no_run
+/// use tcq::runner;
+/// runner::run_through_bam("in.bam", "out.bam", "XZ", 4, Some("filt.bcf"), 30);
 /// ```
 pub fn run_through_bam(ib: &str, ob: &str, tag: &str, p: usize, blk: Option<&str>, mq: u8) {
 	info!("beginning run...");

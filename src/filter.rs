@@ -1,11 +1,9 @@
 use bio::data_structures::interval_tree::IntervalTree;
 use rust_htslib::bcf;
-use rust_htslib::bam;
 use std::collections::HashMap;
 use rust_htslib::bcf::Read;
 use std::str;
 use core::ops::Range;
-use rust_htslib::bam::HeaderView;
 
 /// This class is a collection of IntervalTrees wrapped into a HashMap.
 #[derive(Debug)]

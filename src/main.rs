@@ -77,7 +77,6 @@ fn main() {
     let threads: usize = matches.value_of("THREADS").unwrap_or("1").parse().unwrap();
 	let mapq: u8 = matches.value_of("MAPQ").unwrap_or("0").parse().unwrap();
 	let blk: Option<&str> = matches.value_of("BLKLIST");
-	let ctg_prefix: &str = matches.value_of("CONTIG_PREFIX").unwrap_or("");
 
     info!("arguments parsed...");
 	// TODO: per base phred cutoff

@@ -1,7 +1,4 @@
-use regex::{Regex};
-use rust_htslib::bam::record::{Record, Aux, CigarStringView, Cigar, CigarError};
-use std::str;
-use std::ops::Range;
+use rust_htslib::bam::record::{CigarStringView, Cigar, CigarError};
 
 /// Special struct for dealing with spliced reads.
 ///

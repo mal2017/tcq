@@ -32,7 +32,6 @@ impl Nascent for Record {
 	/// Initial filter that checks MD tag to see if an A or T mismatch exists.
 	fn is_possible_nascent(&self) -> bool {
 		// TODO check reads have md tags,unless unmapped
-		// TODO check bits for revcomp set on - strand reads
 		if self.is_unmapped() { return false };
 
 		lazy_static! { // for speeeeed
@@ -198,4 +197,55 @@ pub fn tid_2_contig(h: &HeaderView) -> HashMap<u32, String> {
 		dict.insert(i as u32, t.to_owned());
 	}
 	dict
+}
+
+#[cfg(test)]
+mod tests {
+	use std::path::Path;
+    use super::*;
+	use handler::Nascent;
+	use rust_htslib::bam;
+	use rust_htslib::bam::Read;
+
+	#[test]
+	fn handle_forward_read_insertions() {
+		let bampath = Path::new("test/insertion_forward.bam");
+		let mut bam = bam::Reader::from_path(bampath).unwrap();
+		let hdrv = bam.header().to_owned();
+		let tid_lookup = tid_2_contig(&hdrv);
+		let tcc: Vec<u32> = bam.records()
+							   .map(|a| a.unwrap())
+					 		   .into_iter()
+					 	   	   .map(|a| a.tc_conversions(&None, &tid_lookup))
+					 	   	   .collect();
+		assert_eq!(tcc[0],3);
+	}
+
+	#[test]
+	fn handle_forward_read_deletions() {
+		let bampath = Path::new("test/deletion_forward.bam");
+		let mut bam = bam::Reader::from_path(bampath).unwrap();
+		let hdrv = bam.header().to_owned();
+		let tid_lookup = tid_2_contig(&hdrv);
+		let tcc: Vec<u32> = bam.records()
+							   .map(|a| a.unwrap())
+					 		   .into_iter()
+					 	   	   .map(|a| a.tc_conversions(&None, &tid_lookup))
+					 	   	   .collect();
+		assert_eq!(tcc[0],1);
+	}
+
+	#[test]
+	fn handle_forward_read_intron() {
+		let bampath = Path::new("test/intron_forward.bam");
+		let mut bam = bam::Reader::from_path(bampath).unwrap();
+		let hdrv = bam.header().to_owned();
+		let tid_lookup = tid_2_contig(&hdrv);
+		let tcc: Vec<u32> = bam.records()
+							   .map(|a| a.unwrap())
+							   .into_iter()
+							   .map(|a| a.tc_conversions(&None, &tid_lookup))
+							   .collect();
+		assert_eq!(tcc[0],2);
+	}
 }
