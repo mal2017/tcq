@@ -39,11 +39,11 @@ pub fn vcf_seems_ok(a: String) -> Result<(), String> {
     let is_acceptable_ext =  ext == "vcf" || ext == "bcf";
 
     let tbi = format!("{}.tbi",&a);
-    let cgi = format!("{}.cgi",&a);
+    let csi = format!("{}.csi",&a);
 
     let idx_exists = {
         Path::new(&tbi).is_file() ||
-            Path::new(&cgi).is_file()
+            Path::new(&csi).is_file()
     };
 
     match p.is_file() {
