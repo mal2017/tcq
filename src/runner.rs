@@ -78,7 +78,7 @@ pub fn run_through_bam(ib: &str, ob: &str, tag: &str, p: usize, blk: Option<&str
 				.map(|a| a.unwrap())
 				.filter(|a| !a.is_unmapped() )
 				.filter(|a| a.mapq() >= mq )
-				.map(|mut a| {a.push_tc_conv_aux(tag.as_bytes(), &filt, &tid_lookup).unwrap();a})
+				.map(|mut a| {a.push_tc_conv_aux(tag.as_bytes(), &filt, &tid_lookup, &library).unwrap();a})
 				.map(|a| obam.write(&a).unwrap())
 				.for_each(drop);
 }

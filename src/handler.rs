@@ -25,15 +25,15 @@ pub trait Nascent {
 
 	fn md_tag(&self) -> String;
 
-	fn cand_tc_mismatch_ref_pos(&self) -> Vec<u32>;
+	fn cand_tc_mismatch_ref_pos(&self, lib: &LibraryType) -> Vec<u32>;
 
-	fn cand_tc_mismatch_pos_tuples(&self) -> Vec<(u32,u32)>;
+	fn cand_tc_mismatch_pos_tuples(&self, lib: &LibraryType) -> Vec<(u32,u32)>;
 
-	fn tc_conversion_pos(&self, f: &Option<ConvFilter>, h: &HashMap<u32, String>) -> Vec<((u32,u32),bool)>;
+	fn tc_conversion_pos(&self, f: &Option<ConvFilter>, h: &HashMap<u32, String>, lib: &LibraryType) -> Vec<((u32,u32),bool)>;
 
-	fn tc_conversions(&self, f: &Option<ConvFilter>, h: &HashMap<u32, String>) -> u32;
+	fn tc_conversions(&self, f: &Option<ConvFilter>, h: &HashMap<u32, String>, lib: &LibraryType) -> u32;
 
-	fn push_tc_conv_aux(&mut self, auxtag: &[u8], f: &Option<ConvFilter>, h: &HashMap<u32, String>) -> Result<(), NascentMolError>;
+	fn push_tc_conv_aux(&mut self, auxtag: &[u8], f: &Option<ConvFilter>, h: &HashMap<u32, String>, lib: &LibraryType) -> Result<(), NascentMolError>;
 }
 
 impl Nascent for Record {
@@ -69,7 +69,7 @@ impl Nascent for Record {
 	}
 
 	/// Finds candidate T>C positions relative to reference.
-	fn cand_tc_mismatch_ref_pos(&self) -> Vec<u32> {
+	fn cand_tc_mismatch_ref_pos(&self, lib: &LibraryType) -> Vec<u32> {
 		lazy_static! { // for speeeeed
 			static ref a_re: Regex  = Regex::new(r"A").unwrap();
 			static ref t_re: Regex  = Regex::new(r"T").unwrap();
@@ -89,10 +89,10 @@ impl Nascent for Record {
 	}
 
 	/// Makes a vector of tuples containing read and reference candidate T>>C positions.
-	fn cand_tc_mismatch_pos_tuples(&self) -> Vec<(u32,u32)> {
+	fn cand_tc_mismatch_pos_tuples(&self, lib: &LibraryType) -> Vec<(u32,u32)> {
 		let cig = self.cigar();
 		let start = self.pos() as u32;
-		let cand_ref_pos = self.cand_tc_mismatch_ref_pos();
+		let cand_ref_pos = self.cand_tc_mismatch_ref_pos(lib);
 		cand_ref_pos.iter()
 					.map(|a| cig.read_pos_spliced(start + a,false,true, start))
 					.map(|a| a.unwrap().unwrap())
@@ -101,8 +101,8 @@ impl Nascent for Record {
 	}
 
 	/// Adds a bool to vector of read/ref position tuples.
-	fn tc_conversion_pos(&self, f: &Option<ConvFilter>, h: &HashMap<u32, String>) -> Vec<((u32,u32),bool)> {
-		let mut cand_pos_tuples = self.cand_tc_mismatch_pos_tuples();
+	fn tc_conversion_pos(&self, f: &Option<ConvFilter>, h: &HashMap<u32, String>, lib: &LibraryType) -> Vec<((u32,u32),bool)> {
+		let mut cand_pos_tuples = self.cand_tc_mismatch_pos_tuples(lib);
 		let mut rng: Range<u32> = Range {start:0,end:0};
 		let chr = h.get(&(self.tid() as u32)).unwrap();
 		let refpos = self.pos() as u32;
@@ -146,14 +146,14 @@ impl Nascent for Record {
 	}
 
 	/// Counts T>>C positions passing all filters.
-	fn tc_conversions(&self, f: &Option<ConvFilter>, h: &HashMap<u32, String>) -> u32 {
-		self.tc_conversion_pos(f, h).iter()
+	fn tc_conversions(&self, f: &Option<ConvFilter>, h: &HashMap<u32, String>, lib: &LibraryType) -> u32 {
+		self.tc_conversion_pos(f, h, lib).iter()
 								.count() as u32
 	}
 
 
 	/// Edits tags to included T>>C counts.
-	fn push_tc_conv_aux(&mut self, auxtag: &[u8],f: &Option<ConvFilter>, h: &HashMap<u32, String>) -> Result<(), NascentMolError> {
+	fn push_tc_conv_aux(&mut self, auxtag: &[u8],f: &Option<ConvFilter>, h: &HashMap<u32, String>, lib: &LibraryType) -> Result<(), NascentMolError> {
 
 		if !self.is_possible_nascent() {
 			match self.push_aux(auxtag, &Aux::Integer(0)) {
@@ -165,7 +165,7 @@ impl Nascent for Record {
 				},
 			}
 		}
-		let tc_aux = Aux::Integer(self.tc_conversions(f, h) as i64);
+		let tc_aux = Aux::Integer(self.tc_conversions(f, h, lib) as i64);
 		match self.push_aux(auxtag, &tc_aux) {
 			Ok(_i) => {
 				Ok(())
