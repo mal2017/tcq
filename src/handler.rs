@@ -9,6 +9,14 @@ use std::str;
 use rust_htslib::bam::HeaderView;
 use std::ops::Range;
 
+/// Holds information about the library construction.
+#[derive(Debug)]
+pub enum LibraryType {
+	R1SENSE,
+	R1ANTISENSE,
+	UNSTRANDED,
+}
+
 /// Main engine for T>>C annotation.
 pub trait Nascent {
 	fn is_possible_nascent(&self) -> bool;

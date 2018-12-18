@@ -11,23 +11,33 @@ use std::env::set_var;
 use tcq::validators::*;
 
 fn main() {
-	use clap::{Arg, App};
+	use clap::{Arg, App, ArgGroup};
 	use tcq::runner;
+	use tcq::handler;
 
 	let matches = App::new("tcq")
                           .version("0.1.5a")
                           .author("Matt Lawlor <matt.a.lawlor@gmail.com>")
                           .about("Util for SLAM-/Timelapse-seq. Adds valid T>>C conversions to tag of your choice.\nRequires revcomp (-) seqs & MD tags.")
                           .arg(Arg::with_name("IBAM")
-                               .help("bam to annotate")
+                               .help("unannotated reads")
                                .required(true)
                                .index(1)
 						   	   .validator(bam_seems_ok))
                           .arg(Arg::with_name("OBAM")
-                               .help("bam to write")
+                               .help("path to write annotated bam reads")
                                .required(true)
                                .index(2)
 							   .validator(dir_exists))
+					      .arg(Arg::with_name("R1SENSE")
+					  		    .long("r1-sense"))
+						  .arg(Arg::with_name("R1ANTISENSE")
+					  			.long("r1-antisense"))
+						  .arg(Arg::with_name("UNSTRANDED")
+					  			.long("unstranded"))
+						  .group(ArgGroup::with_name("LIBRARY")
+					  			.args(&["R1SENSE","R1ANTISENSE","UNSTRANDED"])
+								.required(true))
 						  .arg(Arg::with_name("BLKLIST")
 					  			.help("indexed vcf or bcf with blacklisted sites")
 								.short("b")
@@ -78,13 +88,22 @@ fn main() {
 	let mapq: u8 = matches.value_of("MAPQ").unwrap_or("0").parse().unwrap();
 	let blk: Option<&str> = matches.value_of("BLKLIST");
 
-    info!("arguments parsed...");
+	let library = if matches.is_present("R1SENSE") {
+		handler::LibraryType::R1SENSE
+	} else if matches.is_present("R1ANTISENSE") {
+		handler::LibraryType::R1ANTISENSE
+	} else {
+		handler::LibraryType::UNSTRANDED
+	};
+
+	info!("arguments parsed...");
+
 	// TODO: per base phred cutoff
 	// TODO: check md tag exists
 	// TODO: add force option if already in use
     // TODO: check revcomp
 
-    runner::run_through_bam(bam_file, obam_file, tag, threads, blk, mapq);
+    runner::run_through_bam(bam_file, obam_file, tag, threads, blk, mapq, library);
 
     info!("tcq run complete");
 }
