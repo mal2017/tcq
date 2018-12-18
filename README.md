@@ -2,7 +2,8 @@
 
 `tcq` is a utility written in the rust language for preprocessing of aligned NGS reads generated from
 s<sup>4</sup>U labelled RNAseq experiments. `tcq` will count T to C base
-conversions introduced as part of the workflow. For more details on the protocol
+conversions introduced as part of the workflow and add this to the auxiliary sam/bam tag
+of your choosing. For more details on the protocol
 itself see [Timelapse-seq](https://doi.org/10.1038/nmeth.4582) and
 [SLAM-seq](https://doi.org/10.1126/science.aao2793).
 
