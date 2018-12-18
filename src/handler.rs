@@ -192,11 +192,11 @@ impl Nascent for Record {
 						match self.is_first_in_template() {
 							true  => {
 								println!("w");
-								vec![b'C']
+								vec![b'G']
 							},
 							false => {
 								println!("x");
-								vec![b'G']
+								vec![b'C']
 							},
 						}
 					},
@@ -204,11 +204,11 @@ impl Nascent for Record {
 						match self.is_first_in_template() {
 							true  => {
 								println!("y");
-								vec![b'G']
+								vec![b'C']
 							},
 							false => {
 								println!("z");
-								vec![b'C']
+								vec![b'G']
 							},
 						}
 					},
@@ -221,11 +221,11 @@ impl Nascent for Record {
 						match self.is_first_in_template() {
 							true  => {
 								println!("a");
-								vec![b'G']
+								vec![b'C']
 							},
 							false => {
 								println!("b");
-								vec![b'C']
+								vec![b'G']
 							},
 						}
 					},
@@ -233,11 +233,11 @@ impl Nascent for Record {
 						match self.is_first_in_template() {
 							true  => {
 								println!("c");
-								vec![b'C']
+								vec![b'G']
 							},
 							false => {
 								println!("d");
-								vec![b'G']
+								vec![b'C']
 							},
 						}
 					},
@@ -324,7 +324,7 @@ pub fn tid_2_contig(h: &HeaderView) -> HashMap<u32, String> {
 }
 
 #[cfg(test)]
-mod tests {
+mod tests_plus_strand_cds {
 	use std::path::Path;
     use super::*;
 	use handler::{Nascent, LibraryType};
@@ -332,9 +332,9 @@ mod tests {
 	use rust_htslib::bam::Read;
 
 	#[test]
-	fn handle_forward_read_insertions() {
-		let lib = LibraryType::R1ANTISENSE;
-		let bampath = Path::new("test/insertion_forward.bam");
+	fn handle_r1s_forward_read_insertions() {
+		let lib = LibraryType::R1SENSE;
+		let bampath = Path::new("test/insertion_forward.r1s.bam");
 		let mut bam = bam::Reader::from_path(bampath).unwrap();
 		let hdrv = bam.header().to_owned();
 		let tid_lookup = tid_2_contig(&hdrv);
@@ -343,13 +343,13 @@ mod tests {
 					 		   .into_iter()
 					 	   	   .map(|a| a.tc_conversions(&None, &tid_lookup, &lib))
 					 	   	   .collect();
-		assert_eq!(tcc[0],3);
+		assert_eq!(tcc[0],2);
 	}
 
 	#[test]
-	fn handle_forward_read_deletions() {
-		let lib = LibraryType::R1ANTISENSE;
-		let bampath = Path::new("test/deletion_forward.bam");
+	fn handle_r1s_forward_read_deletions() {
+		let lib = LibraryType::R1SENSE;
+		let bampath = Path::new("test/deletion_forward.r1s.bam");
 		let mut bam = bam::Reader::from_path(bampath).unwrap();
 		let hdrv = bam.header().to_owned();
 		let tid_lookup = tid_2_contig(&hdrv);
@@ -362,9 +362,146 @@ mod tests {
 	}
 
 	#[test]
-	fn handle_forward_read_intron() {
+	fn handle_r1s_forward_read_intron() {
+		let lib = LibraryType::R1SENSE;
+		let bampath = Path::new("test/intron_forward.r1s.bam");
+		let mut bam = bam::Reader::from_path(bampath).unwrap();
+		let hdrv = bam.header().to_owned();
+		let tid_lookup = tid_2_contig(&hdrv);
+		let tcc: Vec<u32> = bam.records()
+							   .map(|a| a.unwrap())
+							   .into_iter()
+							   .map(|a| a.tc_conversions(&None, &tid_lookup, &lib))
+							   .collect();
+		assert_eq!(tcc[0],5);
+	}
+
+	#[test]
+	fn handle_r1as_forward_read_insertions() {
 		let lib = LibraryType::R1ANTISENSE;
-		let bampath = Path::new("test/intron_forward.bam");
+		let bampath = Path::new("test/insertion_forward.r1as.bam");
+		let mut bam = bam::Reader::from_path(bampath).unwrap();
+		let hdrv = bam.header().to_owned();
+		let tid_lookup = tid_2_contig(&hdrv);
+		let tcc: Vec<u32> = bam.records()
+							   .map(|a| a.unwrap())
+					 		   .into_iter()
+					 	   	   .map(|a| a.tc_conversions(&None, &tid_lookup, &lib))
+					 	   	   .collect();
+		assert_eq!(tcc[0],2);
+	}
+
+	#[test]
+	fn handle_r1as_forward_read_deletions() {
+		let lib = LibraryType::R1ANTISENSE;
+		let bampath = Path::new("test/deletion_forward.r1as.bam");
+		let mut bam = bam::Reader::from_path(bampath).unwrap();
+		let hdrv = bam.header().to_owned();
+		let tid_lookup = tid_2_contig(&hdrv);
+		let tcc: Vec<u32> = bam.records()
+							   .map(|a| a.unwrap())
+					 		   .into_iter()
+					 	   	   .map(|a| a.tc_conversions(&None, &tid_lookup, &lib))
+					 	   	   .collect();
+		assert_eq!(tcc[0],1);
+	}
+
+	#[test]
+	fn handle_r1as_forward_read_intron() {
+		let lib = LibraryType::R1ANTISENSE;
+		let bampath = Path::new("test/intron_forward.r1as.bam");
+		let mut bam = bam::Reader::from_path(bampath).unwrap();
+		let hdrv = bam.header().to_owned();
+		let tid_lookup = tid_2_contig(&hdrv);
+		let tcc: Vec<u32> = bam.records()
+							   .map(|a| a.unwrap())
+							   .into_iter()
+							   .map(|a| a.tc_conversions(&None, &tid_lookup, &lib))
+							   .collect();
+		assert_eq!(tcc[0],5);
+	}
+
+	// #### reverse strand reads ####
+
+	#[test]
+	fn handle_r1s_rev_read_insertions() {
+		let lib = LibraryType::R1SENSE;
+		let bampath = Path::new("test/insertion_rev.r1s.bam");
+		let mut bam = bam::Reader::from_path(bampath).unwrap();
+		let hdrv = bam.header().to_owned();
+		let tid_lookup = tid_2_contig(&hdrv);
+		let tcc: Vec<u32> = bam.records()
+							   .map(|a| a.unwrap())
+					 		   .into_iter()
+					 	   	   .map(|a| a.tc_conversions(&None, &tid_lookup, &lib))
+					 	   	   .collect();
+		assert_eq!(tcc[0],1);
+	}
+
+	#[test]
+	fn handle_r1s_rev_read_deletions() {
+		let lib = LibraryType::R1SENSE;
+		let bampath = Path::new("test/deletion_rev.r1s.bam");
+		let mut bam = bam::Reader::from_path(bampath).unwrap();
+		let hdrv = bam.header().to_owned();
+		let tid_lookup = tid_2_contig(&hdrv);
+		let tcc: Vec<u32> = bam.records()
+							   .map(|a| a.unwrap())
+					 		   .into_iter()
+					 	   	   .map(|a| a.tc_conversions(&None, &tid_lookup, &lib))
+					 	   	   .collect();
+		assert_eq!(tcc[0],2);
+	}
+
+	#[test]
+	fn handle_r1s_rev_read_intron() {
+		let lib = LibraryType::R1SENSE;
+		let bampath = Path::new("test/intron_rev.r1s.bam");
+		let mut bam = bam::Reader::from_path(bampath).unwrap();
+		let hdrv = bam.header().to_owned();
+		let tid_lookup = tid_2_contig(&hdrv);
+		let tcc: Vec<u32> = bam.records()
+							   .map(|a| a.unwrap())
+							   .into_iter()
+							   .map(|a| a.tc_conversions(&None, &tid_lookup, &lib))
+							   .collect();
+		assert_eq!(tcc[0],2);
+	}
+
+	#[test]
+	fn handle_r1as_rev_read_insertions() {
+		let lib = LibraryType::R1ANTISENSE;
+		let bampath = Path::new("test/insertion_rev.r1as.bam");
+		let mut bam = bam::Reader::from_path(bampath).unwrap();
+		let hdrv = bam.header().to_owned();
+		let tid_lookup = tid_2_contig(&hdrv);
+		let tcc: Vec<u32> = bam.records()
+							   .map(|a| a.unwrap())
+					 		   .into_iter()
+					 	   	   .map(|a| a.tc_conversions(&None, &tid_lookup, &lib))
+					 	   	   .collect();
+		assert_eq!(tcc[0],1);
+	}
+	
+	#[test]
+	fn handle_r1as_rev_read_deletions() {
+		let lib = LibraryType::R1ANTISENSE;
+		let bampath = Path::new("test/deletion_rev.r1as.bam");
+		let mut bam = bam::Reader::from_path(bampath).unwrap();
+		let hdrv = bam.header().to_owned();
+		let tid_lookup = tid_2_contig(&hdrv);
+		let tcc: Vec<u32> = bam.records()
+							   .map(|a| a.unwrap())
+					 		   .into_iter()
+					 	   	   .map(|a| a.tc_conversions(&None, &tid_lookup, &lib))
+					 	   	   .collect();
+		assert_eq!(tcc[0],2);
+	}
+
+	#[test]
+	fn handle_r1as_rev_read_intron() {
+		let lib = LibraryType::R1ANTISENSE;
+		let bampath = Path::new("test/intron_rev.r1as.bam");
 		let mut bam = bam::Reader::from_path(bampath).unwrap();
 		let hdrv = bam.header().to_owned();
 		let tid_lookup = tid_2_contig(&hdrv);
