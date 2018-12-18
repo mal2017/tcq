@@ -70,22 +70,76 @@ impl Nascent for Record {
 
 	/// Finds candidate T>C positions relative to reference.
 	fn cand_tc_mismatch_ref_pos(&self, lib: &LibraryType) -> Vec<u32> {
-		lazy_static! { // for speeeeed
-			static ref a_re: Regex  = Regex::new(r"A").unwrap();
-			static ref t_re: Regex  = Regex::new(r"T").unwrap();
-		}
-
+		// Get expanded MD tag
 		let exp_md = self.md_ref_seq();
-		// finds all matches in the expanded md tag
-		match self.is_reverse() {
-			true => {
-				a_re.find_iter(&exp_md).map(|a| a.start() as u32).collect() //A>>G
-			},
-			false => {
-				t_re.find_iter(&exp_md).map(|a| a.start() as u32).collect() //T>>C
-			},
+
+		// Create regex objects for what the reference base will be for a given
+		// converted base. This is specific to the library orientation.
+		lazy_static! { // for speeeeed
+			static ref r1_sense_r1_is_for_re: Regex  = Regex::new(r"T").unwrap();
+			static ref r1_sense_r1_is_rev_re: Regex  = Regex::new(r"A").unwrap();
+			static ref r1_antisense_r1_is_for_re: Regex  = Regex::new(r"A").unwrap();
+			static ref r1_antisense_r1_is_rev_re: Regex  = Regex::new(r"T").unwrap();
+			static ref unstranded_re: Regex  = Regex::new(r"[AT]").unwrap();
 		}
 
+
+		match lib {
+			LibraryType::R1SENSE => {
+				println!("matching ref base for r1-s lib");
+				match self.is_reverse() {
+					true  => {
+						match self.is_first_in_template() {
+							true  => {
+								r1_sense_r1_is_rev_re.find_iter(&exp_md).map(|a| a.start() as u32).collect()
+							},
+							false => {
+								r1_sense_r1_is_for_re.find_iter(&exp_md).map(|a| a.start() as u32).collect()
+							},
+						}
+					},
+					false => {
+						match self.is_first_in_template() {
+							true  => {
+								r1_sense_r1_is_for_re.find_iter(&exp_md).map(|a| a.start() as u32).collect()
+							},
+							false => {
+								r1_sense_r1_is_rev_re.find_iter(&exp_md).map(|a| a.start() as u32).collect()
+							},
+						}
+					},
+				}
+			},
+			LibraryType::R1ANTISENSE => {
+				println!("matching ref base for r1-as lib");
+				match self.is_reverse() {
+					true  => {
+						match self.is_first_in_template() {
+							true  => {
+								r1_antisense_r1_is_rev_re.find_iter(&exp_md).map(|a| a.start() as u32).collect()
+							},
+							false => {
+								r1_antisense_r1_is_for_re.find_iter(&exp_md).map(|a| a.start() as u32).collect()
+							},
+						}
+					},
+					false => {
+						match self.is_first_in_template() {
+							true  => {
+								r1_antisense_r1_is_for_re.find_iter(&exp_md).map(|a| a.start() as u32).collect()
+							},
+							false => {
+								r1_antisense_r1_is_rev_re.find_iter(&exp_md).map(|a| a.start() as u32).collect()
+							},
+						}
+					},
+				}
+			},
+			LibraryType::UNSTRANDED => {
+				println!("matching ref base for unstranded lib");
+				unstranded_re.find_iter(&exp_md).map(|a| a.start() as u32).collect()
+			}
+		}
 	}
 
 	/// Makes a vector of tuples containing read and reference candidate T>>C positions.
@@ -93,6 +147,7 @@ impl Nascent for Record {
 		let cig = self.cigar();
 		let start = self.pos() as u32;
 		let cand_ref_pos = self.cand_tc_mismatch_ref_pos(lib);
+		// Make tuple with form (reference-pos, read-pos)
 		cand_ref_pos.iter()
 					.map(|a| cig.read_pos_spliced(start + a,false,true, start))
 					.map(|a| a.unwrap().unwrap())
@@ -103,10 +158,12 @@ impl Nascent for Record {
 	/// Adds a bool to vector of read/ref position tuples.
 	fn tc_conversion_pos(&self, f: &Option<ConvFilter>, h: &HashMap<u32, String>, lib: &LibraryType) -> Vec<((u32,u32),bool)> {
 		let mut cand_pos_tuples = self.cand_tc_mismatch_pos_tuples(lib);
+		println!("{:?}", lib);
 		let mut rng: Range<u32> = Range {start:0,end:0};
 		let chr = h.get(&(self.tid() as u32)).unwrap();
 		let refpos = self.pos() as u32;
 		let it;
+
 		// BELOW THIS IS THE FILTERING PORTION
 		cand_pos_tuples = match f {
 			Some(k) => {
@@ -124,19 +181,85 @@ impl Nascent for Record {
 			None => cand_pos_tuples,
 		};
 		// ABOVE THIS IS THE FILTERING PORTION
-
+		println!("{:?}", cand_pos_tuples);
 		let read_seq = self.seq();
 
-		let conv_target: u8 = if self.is_reverse() {
+		let conv_target: Vec<u8> = match lib {
+			LibraryType::R1SENSE => {
+				println!("A");
+				match self.is_reverse() {
+					true  => {
+						match self.is_first_in_template() {
+							true  => {
+								println!("w");
+								vec![b'C']
+							},
+							false => {
+								println!("x");
+								vec![b'G']
+							},
+						}
+					},
+					false => {
+						match self.is_first_in_template() {
+							true  => {
+								println!("y");
+								vec![b'G']
+							},
+							false => {
+								println!("z");
+								vec![b'C']
+							},
+						}
+					},
+				}
+			},
+			LibraryType::R1ANTISENSE => {
+				println!("B");
+				match self.is_reverse() {
+					true  => {
+						match self.is_first_in_template() {
+							true  => {
+								println!("a");
+								vec![b'G']
+							},
+							false => {
+								println!("b");
+								vec![b'C']
+							},
+						}
+					},
+					false => {
+						match self.is_first_in_template() {
+							true  => {
+								println!("c");
+								vec![b'C']
+							},
+							false => {
+								println!("d");
+								vec![b'G']
+							},
+						}
+					},
+				}
+			},
+			LibraryType::UNSTRANDED => {
+				vec![b'G',b'C']
+			},
+		};
+		println!("{:?} - {:?}", lib, conv_target);
+
+		/*let conv_target: u8 = if self.is_reverse() {
 			b'G'
 		} else {
 			b'C'
-		};
+		};*/
 
 		let enc_base_hit_itr = cand_pos_tuples.iter()
 												.map(|a| a.0 as usize) // get read pos
 												.map(|a| read_seq.as_bytes()[a])
-												.map(|a| a == conv_target);
+												.map(|a| conv_target.contains(&a));
+												//.map(|a| a == conv_target);
 
 		cand_pos_tuples.clone().into_iter()
 						.zip(enc_base_hit_itr)
@@ -204,12 +327,13 @@ pub fn tid_2_contig(h: &HeaderView) -> HashMap<u32, String> {
 mod tests {
 	use std::path::Path;
     use super::*;
-	use handler::Nascent;
+	use handler::{Nascent, LibraryType};
 	use rust_htslib::bam;
 	use rust_htslib::bam::Read;
 
 	#[test]
 	fn handle_forward_read_insertions() {
+		let lib = LibraryType::R1ANTISENSE;
 		let bampath = Path::new("test/insertion_forward.bam");
 		let mut bam = bam::Reader::from_path(bampath).unwrap();
 		let hdrv = bam.header().to_owned();
@@ -217,13 +341,14 @@ mod tests {
 		let tcc: Vec<u32> = bam.records()
 							   .map(|a| a.unwrap())
 					 		   .into_iter()
-					 	   	   .map(|a| a.tc_conversions(&None, &tid_lookup))
+					 	   	   .map(|a| a.tc_conversions(&None, &tid_lookup, &lib))
 					 	   	   .collect();
 		assert_eq!(tcc[0],3);
 	}
 
 	#[test]
 	fn handle_forward_read_deletions() {
+		let lib = LibraryType::R1ANTISENSE;
 		let bampath = Path::new("test/deletion_forward.bam");
 		let mut bam = bam::Reader::from_path(bampath).unwrap();
 		let hdrv = bam.header().to_owned();
@@ -231,13 +356,14 @@ mod tests {
 		let tcc: Vec<u32> = bam.records()
 							   .map(|a| a.unwrap())
 					 		   .into_iter()
-					 	   	   .map(|a| a.tc_conversions(&None, &tid_lookup))
+					 	   	   .map(|a| a.tc_conversions(&None, &tid_lookup, &lib))
 					 	   	   .collect();
 		assert_eq!(tcc[0],1);
 	}
 
 	#[test]
 	fn handle_forward_read_intron() {
+		let lib = LibraryType::R1ANTISENSE;
 		let bampath = Path::new("test/intron_forward.bam");
 		let mut bam = bam::Reader::from_path(bampath).unwrap();
 		let hdrv = bam.header().to_owned();
@@ -245,7 +371,7 @@ mod tests {
 		let tcc: Vec<u32> = bam.records()
 							   .map(|a| a.unwrap())
 							   .into_iter()
-							   .map(|a| a.tc_conversions(&None, &tid_lookup))
+							   .map(|a| a.tc_conversions(&None, &tid_lookup, &lib))
 							   .collect();
 		assert_eq!(tcc[0],2);
 	}
