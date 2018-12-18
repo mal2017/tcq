@@ -86,7 +86,6 @@ impl Nascent for Record {
 
 		match lib {
 			LibraryType::R1SENSE => {
-				println!("matching ref base for r1-s lib");
 				match self.is_reverse() {
 					true  => {
 						match self.is_first_in_template() {
@@ -111,7 +110,6 @@ impl Nascent for Record {
 				}
 			},
 			LibraryType::R1ANTISENSE => {
-				println!("matching ref base for r1-as lib");
 				match self.is_reverse() {
 					true  => {
 						match self.is_first_in_template() {
@@ -136,7 +134,6 @@ impl Nascent for Record {
 				}
 			},
 			LibraryType::UNSTRANDED => {
-				println!("matching ref base for unstranded lib");
 				unstranded_re.find_iter(&exp_md).map(|a| a.start() as u32).collect()
 			}
 		}
@@ -158,7 +155,6 @@ impl Nascent for Record {
 	/// Adds a bool to vector of read/ref position tuples.
 	fn tc_conversion_pos(&self, f: &Option<ConvFilter>, h: &HashMap<u32, String>, lib: &LibraryType) -> Vec<((u32,u32),bool)> {
 		let mut cand_pos_tuples = self.cand_tc_mismatch_pos_tuples(lib);
-		println!("{:?}", lib);
 		let mut rng: Range<u32> = Range {start:0,end:0};
 		let chr = h.get(&(self.tid() as u32)).unwrap();
 		let refpos = self.pos() as u32;
@@ -181,21 +177,17 @@ impl Nascent for Record {
 			None => cand_pos_tuples,
 		};
 		// ABOVE THIS IS THE FILTERING PORTION
-		println!("{:?}", cand_pos_tuples);
 		let read_seq = self.seq();
 
 		let conv_target: Vec<u8> = match lib {
 			LibraryType::R1SENSE => {
-				println!("A");
 				match self.is_reverse() {
 					true  => {
 						match self.is_first_in_template() {
 							true  => {
-								println!("w");
 								vec![b'G']
 							},
 							false => {
-								println!("x");
 								vec![b'C']
 							},
 						}
@@ -203,11 +195,9 @@ impl Nascent for Record {
 					false => {
 						match self.is_first_in_template() {
 							true  => {
-								println!("y");
 								vec![b'C']
 							},
 							false => {
-								println!("z");
 								vec![b'G']
 							},
 						}
@@ -215,16 +205,13 @@ impl Nascent for Record {
 				}
 			},
 			LibraryType::R1ANTISENSE => {
-				println!("B");
 				match self.is_reverse() {
 					true  => {
 						match self.is_first_in_template() {
 							true  => {
-								println!("a");
 								vec![b'C']
 							},
 							false => {
-								println!("b");
 								vec![b'G']
 							},
 						}
@@ -232,11 +219,9 @@ impl Nascent for Record {
 					false => {
 						match self.is_first_in_template() {
 							true  => {
-								println!("c");
 								vec![b'G']
 							},
 							false => {
-								println!("d");
 								vec![b'C']
 							},
 						}
@@ -247,13 +232,6 @@ impl Nascent for Record {
 				vec![b'G',b'C']
 			},
 		};
-		println!("{:?} - {:?}", lib, conv_target);
-
-		/*let conv_target: u8 = if self.is_reverse() {
-			b'G'
-		} else {
-			b'C'
-		};*/
 
 		let enc_base_hit_itr = cand_pos_tuples.iter()
 												.map(|a| a.0 as usize) // get read pos
