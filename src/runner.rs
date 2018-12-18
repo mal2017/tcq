@@ -3,6 +3,7 @@ use rust_htslib::prelude::*;
 use std::str;
 use super::handler::Nascent;
 use super::handler::tid_2_contig;
+use super::handler::LibraryType;
 use super::filter::*;
 
 /// Iterates through bam records and annotates each read with the T>>C conversion count.
@@ -20,9 +21,10 @@ use super::filter::*;
 /// # Example (compiled, not run)
 /// ```rust,no_run
 /// use tcq::runner;
-/// runner::run_through_bam("in.bam", "out.bam", "XZ", 4, Some("filt.bcf"), 30);
+/// use tcq::handler::LibraryType::R1ANTISENSE;
+/// runner::run_through_bam("in.bam", "out.bam", "XZ", 4, Some("filt.bcf"), 30, R1ANTISENSE);
 /// ```
-pub fn run_through_bam(ib: &str, ob: &str, tag: &str, p: usize, blk: Option<&str>, mq: u8) {
+pub fn run_through_bam(ib: &str, ob: &str, tag: &str, p: usize, blk: Option<&str>, mq: u8, library: LibraryType) {
 	info!("beginning run...");
 
 	// Creates either a working filter or a none.

@@ -43,20 +43,13 @@ impl Nascent for Record {
 		if self.is_unmapped() { return false };
 
 		lazy_static! { // for speeeeed
-			static ref revr_re: Regex  = Regex::new(r"A").unwrap();
-			static ref forw_re: Regex  = Regex::new(r"T").unwrap();
+			static ref foo_re: Regex  = Regex::new(r"A").unwrap();
+			static ref bar_re: Regex  = Regex::new(r"T").unwrap();
 		}
 
 		let md = self.md_tag();
 
-		match self.is_reverse() {
-			true => {
-				revr_re.is_match(&md) //A>>G
-			},
-			false => {
-				forw_re.is_match(&md) //T>>C
-			},
-		}
+		foo_re.is_match(&md) | bar_re.is_match(&md)
 	}
 
 	/// Pull MD tag from record.
@@ -83,7 +76,7 @@ impl Nascent for Record {
 		}
 
 		let exp_md = self.md_ref_seq();
-		//info!("{}",exp_md);
+		// finds all matches in the expanded md tag
 		match self.is_reverse() {
 			true => {
 				a_re.find_iter(&exp_md).map(|a| a.start() as u32).collect() //A>>G
