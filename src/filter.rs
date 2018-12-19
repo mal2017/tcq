@@ -1,9 +1,9 @@
 use bio::data_structures::interval_tree::IntervalTree;
-use rust_htslib::bcf;
-use std::collections::HashMap;
-use rust_htslib::bcf::Read;
-use std::str;
 use core::ops::Range;
+use rust_htslib::bcf;
+use rust_htslib::bcf::Read;
+use std::collections::HashMap;
+use std::str;
 
 /// This class is a collection of IntervalTrees wrapped into a HashMap.
 #[derive(Debug)]
@@ -34,28 +34,44 @@ impl ConvFilter {
         let mut chrom: String;
 
         // Iterate over records, storing them in `record` for each iteration of while loop.
-        while let Some(r) =  vcf_records.next() {
+        while let Some(r) = vcf_records.next() {
             record = r.unwrap();
 
             // Get chromosome name.
-            chrom = format!("{}",str::from_utf8(hdr.rid2name(record.rid().unwrap())).unwrap().to_owned());
+            chrom = format!(
+                "{}",
+                str::from_utf8(hdr.rid2name(record.rid().unwrap()))
+                    .unwrap()
+                    .to_owned()
+            );
 
             // Get position of record.
             pos = record.pos();
 
             // Add an entry to the HashMap<IntervalTree> built above.
-            blank.entry(chrom)
-                     .and_modify(|a| a.insert(Range  {start: pos, end: pos+1},0))
-                     .or_insert({ let mut a = IntervalTree::new();
-                                  a.insert(Range  {start: pos, end: pos+1},0);
-                                  a
-                                  });
-        };
-        Ok(
-            ConvFilter {
-                inner: blank,
-            }
-        )
+            blank
+                .entry(chrom)
+                .and_modify(|a| {
+                    a.insert(
+                        Range {
+                            start: pos,
+                            end: pos + 1,
+                        },
+                        0,
+                    )
+                }).or_insert({
+                    let mut a = IntervalTree::new();
+                    a.insert(
+                        Range {
+                            start: pos,
+                            end: pos + 1,
+                        },
+                        0,
+                    );
+                    a
+                });
+        }
+        Ok(ConvFilter { inner: blank })
     }
 }
 

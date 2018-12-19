@@ -1,21 +1,22 @@
 #![forbid(unsafe_code)]
 
+extern crate bio;
 extern crate clap;
 extern crate rust_htslib;
-extern crate bio;
 extern crate tcq;
-#[macro_use] extern crate log;
+#[macro_use]
+extern crate log;
 extern crate env_logger;
 
 use std::env::set_var;
 use tcq::validators::*;
 
 fn main() {
-	use clap::{Arg, App, ArgGroup};
-	use tcq::runner;
-	use tcq::handler;
+    use clap::{App, Arg, ArgGroup};
+    use tcq::handler;
+    use tcq::runner;
 
-	let matches = App::new("tcq")
+    let matches = App::new("tcq")
                           .version("0.2.0")
                           .author("Matt Lawlor <matt.a.lawlor@gmail.com>")
                           .about("Util for SLAM-/Timelapse-seq. Adds valid T>>C conversions to tag of your choice.\nRequires revcomp (-) seqs & MD tags.")
@@ -69,12 +70,10 @@ fn main() {
     let verbose: bool = matches.is_present("VERBOSE");
 
     match verbose {
-      true => {
-        set_var("RUST_LOG","info");
-      },
-      false => {
-        set_var("RUST_LOG","error")
-      }
+        true => {
+            set_var("RUST_LOG", "info");
+        }
+        false => set_var("RUST_LOG", "error"),
     }
 
     env_logger::init();
@@ -85,22 +84,22 @@ fn main() {
     let obam_file: &str = matches.value_of("OBAM").unwrap();
     let tag: &str = matches.value_of("TAG").unwrap_or("ZX");
     let threads: usize = matches.value_of("THREADS").unwrap_or("1").parse().unwrap();
-	let mapq: u8 = matches.value_of("MAPQ").unwrap_or("0").parse().unwrap();
-	let blk: Option<&str> = matches.value_of("BLKLIST");
+    let mapq: u8 = matches.value_of("MAPQ").unwrap_or("0").parse().unwrap();
+    let blk: Option<&str> = matches.value_of("BLKLIST");
 
-	let library = if matches.is_present("R1SENSE") {
-		handler::LibraryType::R1SENSE
-	} else if matches.is_present("R1ANTISENSE") {
-		handler::LibraryType::R1ANTISENSE
-	} else {
-		handler::LibraryType::UNSTRANDED
-	};
+    let library = if matches.is_present("R1SENSE") {
+        handler::LibraryType::R1SENSE
+    } else if matches.is_present("R1ANTISENSE") {
+        handler::LibraryType::R1ANTISENSE
+    } else {
+        handler::LibraryType::UNSTRANDED
+    };
 
-	info!("arguments parsed...");
+    info!("arguments parsed...");
 
-	// TODO: per base phred cutoff
-	// TODO: check md tag exists
-	// TODO: add force option if already in use
+    // TODO: per base phred cutoff
+    // TODO: check md tag exists
+    // TODO: add force option if already in use
     // TODO: check revcomp
 
     runner::run_through_bam(bam_file, obam_file, tag, threads, blk, mapq, library);
