@@ -59,7 +59,8 @@ impl ConvFilter {
                         },
                         0,
                     )
-                }).or_insert({
+                })
+                .or_insert({
                     let mut a = IntervalTree::new();
                     a.insert(
                         Range {

@@ -191,7 +191,8 @@ impl Nascent for Record {
                             Some(j) => j.find(&rng).any(|_a| true),
                             None => false,
                         }
-                    }).collect()
+                    })
+                    .collect()
             }
             None => cand_pos_tuples,
         };
@@ -222,10 +223,11 @@ impl Nascent for Record {
             LibraryType::UNSTRANDED => vec![b'G', b'C'],
         };
 
-        let enc_base_hit_itr = cand_pos_tuples.iter()
-												.map(|a| a.0 as usize) // get read pos
-												.map(|a| read_seq.as_bytes()[a])
-												.map(|a| conv_target.contains(&a));
+        let enc_base_hit_itr = cand_pos_tuples
+            .iter()
+            .map(|a| a.0 as usize) // get read pos
+            .map(|a| read_seq.as_bytes()[a])
+            .map(|a| conv_target.contains(&a));
         //.map(|a| a == conv_target);
 
         cand_pos_tuples

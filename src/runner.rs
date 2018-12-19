@@ -87,6 +87,7 @@ pub fn run_through_bam(
             a.push_tc_conv_aux(tag.as_bytes(), &filt, &tid_lookup, &library)
                 .unwrap();
             a
-        }).map(|a| obam.write(&a).unwrap())
+        })
+        .map(|a| obam.write(&a).unwrap())
         .for_each(drop);
 }
