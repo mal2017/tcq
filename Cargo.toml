@@ -7,7 +7,7 @@ authors = ["mattlawlor <matt.a.lawlor@gmail.com>"]
 clap = {version = "~2.32.0", features = ["yaml"]}
 bio = "*"
 indicatif = "*"
-rust-htslib ="0.22.0"
+rust-htslib = {git = "https://github.com/rust-bio/rust-htslib.git", rev = "6a93aa473077c08aa52be0c2a89f1ee9d1c27609"}
 csv = "1"
 ndarray={version = "0.11.2", features = ["serde-1"]}
 serde="*"
