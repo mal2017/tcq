@@ -1,3 +1,5 @@
+[![Travis](https://travis-ci.org/mal2017/tcq.svg?branch=master)](https://travis-ci.org/mal2017/tcq)
+
 # tcq
 
 `tcq` is a utility written in the rust language for preprocessing of aligned NGS reads generated from
