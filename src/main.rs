@@ -107,7 +107,9 @@ fn main() {
     // TODO: add force option if already in use
     // TODO: check revcomp
 
-    runner::run_through_bam(bam_file, obam_file, tag, threads, blk, mapq, library, softclips);
+    runner::run_through_bam(
+        bam_file, obam_file, tag, threads, blk, mapq, library, softclips,
+    );
 
     info!("tcq run complete");
 }

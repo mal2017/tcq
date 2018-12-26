@@ -160,8 +160,10 @@ impl Nascent for Record {
         cand_ref_pos
             .iter()
             // use query pos calculated fron POS + (position within md tag)
-            // use include_softclips: true because we want the position relative to the whole read seq
-            .map(|a| cig.read_pos_spliced(start + a, true, true, start))
+            // use_softclips/use_dels is often irrelevant, all positions generally come From
+            // highly covered variant calls, but good to set softclips to true just in case,
+            // and include_dels to false so we don't get spurious tc calls.
+            .map(|a| cig.read_pos_spliced(start + a, true, false, start))
             .map(|a| a.unwrap().unwrap())
             .zip(cand_ref_pos.clone().into_iter())
             .collect()
@@ -259,7 +261,7 @@ impl Nascent for Record {
         f: &Option<ConvFilter>,
         h: &HashMap<u32, String>,
         lib: &LibraryType,
-        softclips: &bool
+        softclips: &bool,
     ) -> Result<(), NascentMolError> {
         if !self.is_possible_nascent() {
             match self.push_aux(auxtag, &Aux::Integer(0)) {

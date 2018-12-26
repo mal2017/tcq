@@ -32,7 +32,7 @@ pub fn run_through_bam(
     blk: Option<&str>,
     mq: u8,
     library: LibraryType,
-    softclips: bool
+    softclips: bool,
 ) {
     info!("beginning run...");
 
