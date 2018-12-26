@@ -48,7 +48,6 @@ pub trait Nascent {
         f: &Option<ConvFilter>,
         h: &HashMap<u32, String>,
         lib: &LibraryType,
-        softclips: &bool,
     ) -> Result<(), NascentMolError>;
 }
 
@@ -261,7 +260,6 @@ impl Nascent for Record {
         f: &Option<ConvFilter>,
         h: &HashMap<u32, String>,
         lib: &LibraryType,
-        softclips: &bool,
     ) -> Result<(), NascentMolError> {
         if !self.is_possible_nascent() {
             match self.push_aux(auxtag, &Aux::Integer(0)) {
