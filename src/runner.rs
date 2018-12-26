@@ -22,7 +22,7 @@ use std::str;
 /// ```rust,no_run
 /// use tcq::runner;
 /// use tcq::handler::LibraryType::R1ANTISENSE;
-/// runner::run_through_bam("in.bam", "out.bam", "XZ", 4, Some("filt.bcf"), 30, R1ANTISENSE);
+/// runner::run_through_bam("in.bam", "out.bam", "XZ", 4, Some("filt.bcf"), 30, R1ANTISENSE, true);
 /// ```
 pub fn run_through_bam(
     ib: &str,
@@ -32,6 +32,7 @@ pub fn run_through_bam(
     blk: Option<&str>,
     mq: u8,
     library: LibraryType,
+    softclips: bool
 ) {
     info!("beginning run...");
 
@@ -84,7 +85,7 @@ pub fn run_through_bam(
         .filter(|a| !a.is_unmapped())
         .filter(|a| a.mapq() >= mq)
         .map(|mut a| {
-            a.push_tc_conv_aux(tag.as_bytes(), &filt, &tid_lookup, &library)
+            a.push_tc_conv_aux(tag.as_bytes(), &filt, &tid_lookup, &library, &softclips)
                 .unwrap();
             a
         })

@@ -48,6 +48,7 @@ pub trait Nascent {
         f: &Option<ConvFilter>,
         h: &HashMap<u32, String>,
         lib: &LibraryType,
+        softclips: &bool,
     ) -> Result<(), NascentMolError>;
 }
 
@@ -152,11 +153,15 @@ impl Nascent for Record {
     fn cand_tc_mismatch_pos_tuples(&self, lib: &LibraryType) -> Vec<(u32, u32)> {
         let cig = self.cigar();
         let start = self.pos() as u32;
+
+        // from md tag so no softclips incl in ref pos,
         let cand_ref_pos = self.cand_tc_mismatch_ref_pos(lib);
-        // Make tuple with form (reference-pos, read-pos)
+        // Make tuple with form (read, ref-pos)
         cand_ref_pos
             .iter()
-            .map(|a| cig.read_pos_spliced(start + a, false, true, start))
+            // use query pos calculated fron POS + (position within md tag)
+            // use include_softclips: true because we want the position relative to the whole read seq
+            .map(|a| cig.read_pos_spliced(start + a, true, true, start))
             .map(|a| a.unwrap().unwrap())
             .zip(cand_ref_pos.clone().into_iter())
             .collect()
@@ -184,7 +189,7 @@ impl Nascent for Record {
                     .filter(|a| !{
                         // negate false if overlap w. filt returns anything
                         rng = Range {
-                            start: refpos + a.1,
+                            start: refpos + a.1, // equiv to POS + (MD derived pos within read(Ie no softclips))
                             end: refpos + a.1 + 1,
                         };
                         match it.get(chr) {
@@ -228,7 +233,6 @@ impl Nascent for Record {
             .map(|a| a.0 as usize) // get read pos
             .map(|a| read_seq.as_bytes()[a])
             .map(|a| conv_target.contains(&a));
-        //.map(|a| a == conv_target);
 
         cand_pos_tuples
             .clone()
@@ -255,6 +259,7 @@ impl Nascent for Record {
         f: &Option<ConvFilter>,
         h: &HashMap<u32, String>,
         lib: &LibraryType,
+        softclips: &bool
     ) -> Result<(), NascentMolError> {
         if !self.is_possible_nascent() {
             match self.push_aux(auxtag, &Aux::Integer(0)) {

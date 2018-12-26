@@ -51,6 +51,10 @@ fn main() {
                           	   .long("tag")
                           	   .takes_value(true)
 							   .validator(tag_is_reserved_local))
+                          .arg(Arg::with_name("SOFTCLIPS")
+                               .help("use if softclips are present in your alignments")
+                               .short("s")
+                               .long("softclips"))
 						  .arg(Arg::with_name("MAPQ")
 					  		   .help("MAPQ must be greater than OR EQUAL TO provided cutoff; default 0")
 						   	   .long("mapq")
@@ -86,6 +90,7 @@ fn main() {
     let threads: usize = matches.value_of("THREADS").unwrap_or("1").parse().unwrap();
     let mapq: u8 = matches.value_of("MAPQ").unwrap_or("0").parse().unwrap();
     let blk: Option<&str> = matches.value_of("BLKLIST");
+    let softclips: bool = matches.is_present("SOFTCLIPS");
 
     let library = if matches.is_present("R1SENSE") {
         handler::LibraryType::R1SENSE
@@ -102,7 +107,7 @@ fn main() {
     // TODO: add force option if already in use
     // TODO: check revcomp
 
-    runner::run_through_bam(bam_file, obam_file, tag, threads, blk, mapq, library);
+    runner::run_through_bam(bam_file, obam_file, tag, threads, blk, mapq, library, softclips);
 
     info!("tcq run complete");
 }
