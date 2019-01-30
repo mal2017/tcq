@@ -2,7 +2,7 @@ use regex::Regex;
 
 /// From an MD tag reconstruct a pseudo-reference.
 pub fn md_expanded(md: String) -> String {
-    info!("{:?}", md);
+    info!("{:?}", replace_matches(replace_dels(md.clone())));
     replace_matches(replace_dels(md))
 }
 

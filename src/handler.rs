@@ -24,16 +24,16 @@ pub trait Nascent {
 
     fn md_tag(&self) -> String;
 
-    fn cand_tc_mismatch_ref_pos(&self, lib: &LibraryType) -> Vec<u32>;
+    fn cand_tc_mismatch_ref_pos(&self, lib: &LibraryType) -> Vec<i32>;
 
-    fn cand_tc_mismatch_pos_tuples(&self, lib: &LibraryType) -> Vec<(u32, u32)>;
+    fn cand_tc_mismatch_pos_tuples(&self, lib: &LibraryType) -> Vec<(i32, i32)>;
 
     fn tc_conversion_pos(
         &self,
         f: &Option<ConvFilter>,
         h: &HashMap<u32, String>,
         lib: &LibraryType,
-    ) -> Vec<((u32, u32), bool)>;
+    ) -> Vec<((i32, i32), bool)>;
 
     fn tc_conversions(
         &self,
@@ -82,7 +82,7 @@ impl Nascent for Record {
     }
 
     /// Finds candidate T>C positions relative to reference.
-    fn cand_tc_mismatch_ref_pos(&self, lib: &LibraryType) -> Vec<u32> {
+    fn cand_tc_mismatch_ref_pos(&self, lib: &LibraryType) -> Vec<i32> {
         // Get expanded MD tag
         let exp_md = self.md_ref_seq();
 
@@ -101,21 +101,21 @@ impl Nascent for Record {
                 true => match self.is_first_in_template() {
                     true => r1_sense_r1_is_rev_re
                         .find_iter(&exp_md)
-                        .map(|a| a.start() as u32)
+                        .map(|a| a.start() as i32)
                         .collect(),
                     false => r1_sense_r1_is_for_re
                         .find_iter(&exp_md)
-                        .map(|a| a.start() as u32)
+                        .map(|a| a.start() as i32)
                         .collect(),
                 },
                 false => match self.is_first_in_template() {
                     true => r1_sense_r1_is_for_re
                         .find_iter(&exp_md)
-                        .map(|a| a.start() as u32)
+                        .map(|a| a.start() as i32)
                         .collect(),
                     false => r1_sense_r1_is_rev_re
                         .find_iter(&exp_md)
-                        .map(|a| a.start() as u32)
+                        .map(|a| a.start() as i32)
                         .collect(),
                 },
             },
@@ -123,35 +123,35 @@ impl Nascent for Record {
                 true => match self.is_first_in_template() {
                     true => r1_antisense_r1_is_rev_re
                         .find_iter(&exp_md)
-                        .map(|a| a.start() as u32)
+                        .map(|a| a.start() as i32)
                         .collect(),
                     false => r1_antisense_r1_is_for_re
                         .find_iter(&exp_md)
-                        .map(|a| a.start() as u32)
+                        .map(|a| a.start() as i32)
                         .collect(),
                 },
                 false => match self.is_first_in_template() {
                     true => r1_antisense_r1_is_for_re
                         .find_iter(&exp_md)
-                        .map(|a| a.start() as u32)
+                        .map(|a| a.start() as i32)
                         .collect(),
                     false => r1_antisense_r1_is_rev_re
                         .find_iter(&exp_md)
-                        .map(|a| a.start() as u32)
+                        .map(|a| a.start() as i32)
                         .collect(),
                 },
             },
             LibraryType::UNSTRANDED => unstranded_re
                 .find_iter(&exp_md)
-                .map(|a| a.start() as u32)
+                .map(|a| a.start() as i32)
                 .collect(),
         }
     }
 
     /// Makes a vector of tuples containing read and reference candidate T>>C positions.
-    fn cand_tc_mismatch_pos_tuples(&self, lib: &LibraryType) -> Vec<(u32, u32)> {
+    fn cand_tc_mismatch_pos_tuples(&self, lib: &LibraryType) -> Vec<(i32, i32)> {
         let cig = self.cigar();
-        let start = self.pos() as u32;
+        let start = self.pos() as i32;
 
         // from md tag so no softclips incl in ref pos,
         let cand_ref_pos = self.cand_tc_mismatch_ref_pos(lib);
@@ -163,8 +163,9 @@ impl Nascent for Record {
             // highly covered variant calls, but good to set softclips to true just in case,
             // and include_dels to false so we don't get spurious tc calls.
             .map(|a| cig.read_pos_spliced(start + a, true, false, start))
-            .map(|a| a.unwrap().unwrap())
+            .map(|a| a.unwrap().unwrap_or( - 1 ))
             .zip(cand_ref_pos.clone().into_iter())
+            .filter(|a| a.0 >= 0)
             .collect()
     }
 
@@ -174,11 +175,11 @@ impl Nascent for Record {
         f: &Option<ConvFilter>,
         h: &HashMap<u32, String>,
         lib: &LibraryType,
-    ) -> Vec<((u32, u32), bool)> {
+    ) -> Vec<((i32, i32), bool)> {
         let mut cand_pos_tuples = self.cand_tc_mismatch_pos_tuples(lib);
         let mut rng: Range<u32> = Range { start: 0, end: 0 };
         let chr = h.get(&(self.tid() as u32)).unwrap();
-        let refpos = self.pos() as u32;
+        let refpos = self.pos() as i32;
         let it;
 
         // BELOW THIS IS THE FILTERING PORTION
@@ -190,8 +191,8 @@ impl Nascent for Record {
                     .filter(|a| !{
                         // negate false if overlap w. filt returns anything
                         rng = Range {
-                            start: refpos + a.1, // equiv to POS + (MD derived pos within read(Ie no softclips))
-                            end: refpos + a.1 + 1,
+                            start: (refpos + a.1) as u32, // equiv to POS + (MD derived pos within read(Ie no softclips))
+                            end: (refpos + a.1 + 1) as u32,
                         };
                         match it.get(chr) {
                             Some(j) => j.find(&rng).any(|_a| true),

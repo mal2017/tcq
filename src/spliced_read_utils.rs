@@ -8,24 +8,24 @@ use rust_htslib::bam::record::{Cigar, CigarError, CigarStringView};
 pub trait SplicedReadCigarStringView {
     fn read_pos_spliced(
         &self,
-        ref_pos: u32,
+        ref_pos: i32,
         include_softclips: bool,
         include_dels: bool,
-        record_pos: u32,
-    ) -> Result<Option<u32>, CigarError>;
+        record_pos: i32,
+    ) -> Result<Option<i32>, CigarError>;
 }
 
 impl SplicedReadCigarStringView for CigarStringView {
     /// Trait implementation for regular CigarStringView.
     fn read_pos_spliced(
         &self,
-        ref_pos: u32,
+        ref_pos: i32,
         include_softclips: bool,
         include_dels: bool,
-        record_pos: u32,
-    ) -> Result<Option<u32>, CigarError> {
+        record_pos: i32,
+    ) -> Result<Option<i32>, CigarError> {
         let mut rpos = record_pos; // reference position
-        let mut qpos = 0u32; // position within read
+        let mut qpos = 0i32; // position within read
         let mut j = 0; // index into cigar operation vector
         for (i, c) in self.iter().enumerate() {
             match c {
@@ -36,7 +36,7 @@ impl SplicedReadCigarStringView for CigarStringView {
                 &Cigar::SoftClip(l) => {
                     j = i;
                     if include_softclips {
-                        rpos = rpos.saturating_sub(l);
+                        rpos = rpos.saturating_sub(l as i32);
                     }
                     break;
                 }
@@ -62,7 +62,7 @@ impl SplicedReadCigarStringView for CigarStringView {
             }
         }
 
-        let contains_ref_pos = |cigar_op_start: u32, cigar_op_length: u32| {
+        let contains_ref_pos = |cigar_op_start: i32, cigar_op_length: i32| {
             cigar_op_start <= ref_pos && cigar_op_start + cigar_op_length > ref_pos
         };
 
@@ -70,23 +70,23 @@ impl SplicedReadCigarStringView for CigarStringView {
             match &self[j] {
                 // potential SNV evidence
                 &Cigar::Match(l) | &Cigar::Diff(l) | &Cigar::Equal(l)
-                    if contains_ref_pos(rpos, l) =>
+                    if contains_ref_pos(rpos, l as i32) =>
                 {
                     // difference between desired position and first position of current cigar
                     // operation
                     qpos += ref_pos - rpos;
                     return Ok(Some(qpos));
                 }
-                &Cigar::SoftClip(l) if include_softclips && contains_ref_pos(rpos, l) => {
+                &Cigar::SoftClip(l) if include_softclips && contains_ref_pos(rpos, l as i32) => {
                     qpos += ref_pos - rpos;
                     return Ok(Some(qpos));
                 }
-                &Cigar::Del(l) if include_dels && contains_ref_pos(rpos, l) => {
+                &Cigar::Del(l) if include_dels && contains_ref_pos(rpos, l as i32) => {
                     // qpos shall resemble the start of the deletion
                     return Ok(Some(qpos));
                 }
 
-                &Cigar::RefSkip(l) if contains_ref_pos(rpos, l) => {
+                &Cigar::RefSkip(l) if contains_ref_pos(rpos, l as i32) => {
                     // Added to handle introns. This translates as though we said:
                     // If the normal rust-htslib would have said that this position
                     // is contained by the skipped region (intron), then rather than
@@ -97,29 +97,29 @@ impl SplicedReadCigarStringView for CigarStringView {
 
                 // for others, just increase pos and qpos as needed
                 &Cigar::Match(l) | &Cigar::Diff(l) | &Cigar::Equal(l) => {
-                    rpos += l;
-                    qpos += l;
+                    rpos += (l as i32);
+                    qpos += (l as i32);
                     j += 1;
                 }
                 &Cigar::SoftClip(l) => {
-                    qpos += l;
+                    qpos += (l as i32);
                     j += 1;
                     if include_softclips {
-                        rpos += l;
+                        rpos += (l as i32);
                     }
                 }
                 &Cigar::Ins(l) => {
-                    qpos += l;
+                    qpos += (l as i32);
                     j += 1;
                 }
                 &Cigar::RefSkip(l) | &Cigar::Del(l) => {
-                    rpos += l;
+                    rpos += (l as i32);
                     j += 1;
                 }
                 &Cigar::Pad(_) => {
                     j += 1;
                 }
-                &Cigar::HardClip(_) if j < self.len() - 1 => {
+                &Cigar::HardClip(_) if (j as i32) < (self.len() - 1) as i32 => {
                     return Err(CigarError::UnexpectedOperation(
                         "'hard clip' (H) found in between operations, contradicting SAMv1 spec that hard clips can only be at the ends of reads".to_owned()
                     ));
