@@ -163,7 +163,7 @@ impl Nascent for Record {
             // highly covered variant calls, but good to set softclips to true just in case,
             // and include_dels to false so we don't get spurious tc calls.
             .map(|a| cig.read_pos_spliced(start + a, true, false, start))
-            .map(|a| a.unwrap().unwrap_or( - 1 ))
+            .map(|a| a.unwrap().unwrap_or(-1))
             .zip(cand_ref_pos.clone().into_iter())
             .filter(|a| a.0 >= 0)
             .collect()
