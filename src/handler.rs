@@ -96,9 +96,11 @@ impl Nascent for Record {
             static ref unstranded_re: Regex  = Regex::new(r"[AT]").unwrap();
         }
 
+        let is_r1 = self.is_first_in_template() || !(self.is_paired());
+
         match lib {
             LibraryType::R1SENSE => match self.is_reverse() {
-                true => match self.is_first_in_template() {
+                true => match is_r1 {
                     true => r1_sense_r1_is_rev_re
                         .find_iter(&exp_md)
                         .map(|a| a.start() as i32)
@@ -108,7 +110,7 @@ impl Nascent for Record {
                         .map(|a| a.start() as i32)
                         .collect(),
                 },
-                false => match self.is_first_in_template() {
+                false => match is_r1 {
                     true => r1_sense_r1_is_for_re
                         .find_iter(&exp_md)
                         .map(|a| a.start() as i32)
@@ -120,7 +122,7 @@ impl Nascent for Record {
                 },
             },
             LibraryType::R1ANTISENSE => match self.is_reverse() {
-                true => match self.is_first_in_template() {
+                true => match is_r1 {
                     true => r1_antisense_r1_is_rev_re
                         .find_iter(&exp_md)
                         .map(|a| a.start() as i32)
@@ -130,7 +132,7 @@ impl Nascent for Record {
                         .map(|a| a.start() as i32)
                         .collect(),
                 },
-                false => match self.is_first_in_template() {
+                false => match is_r1 {
                     true => r1_antisense_r1_is_for_re
                         .find_iter(&exp_md)
                         .map(|a| a.start() as i32)
@@ -206,23 +208,25 @@ impl Nascent for Record {
         // ABOVE THIS IS THE FILTERING PORTION
         let read_seq = self.seq();
 
+        let is_r1 = self.is_first_in_template() || !(self.is_paired());
+
         let conv_target: Vec<u8> = match lib {
             LibraryType::R1SENSE => match self.is_reverse() {
-                true => match self.is_first_in_template() {
+                true => match is_r1 {
                     true => vec![b'G'],
                     false => vec![b'C'],
                 },
-                false => match self.is_first_in_template() {
+                false => match is_r1 {
                     true => vec![b'C'],
                     false => vec![b'G'],
                 },
             },
             LibraryType::R1ANTISENSE => match self.is_reverse() {
-                true => match self.is_first_in_template() {
+                true => match is_r1 {
                     true => vec![b'C'],
                     false => vec![b'G'],
                 },
-                false => match self.is_first_in_template() {
+                false => match is_r1 {
                     true => vec![b'G'],
                     false => vec![b'C'],
                 },

@@ -1,0 +1,27 @@
+package:
+  name: tcq
+  version: {{ GIT_DESCRIBE_TAG }}
+
+build:
+  number: 1
+  skip: true  # [osx]
+
+source:
+  path: ../
+
+requirements:
+  build:
+    - xz
+    - zlib
+    - htslib
+    - clangdev
+    - binutils
+    - {{ compiler('c') }}
+
+test:
+  commands:
+    - tcq --help
+
+about:
+  home: https://github.com/mal2017/tcq
+license: MIT
