@@ -17,7 +17,7 @@ fn main() {
     use tcq::runner;
 
     let matches = App::new("tcq")
-                          .version("0.2.0")
+                          .version("0.4.0")
                           .author("Matt Lawlor <matt.a.lawlor@gmail.com>")
                           .about("Util for SLAM-/Timelapse-seq. Adds valid T>>C conversions to tag of your choice.\nRequires revcomp (-) seqs & MD tags.")
                           .arg(Arg::with_name("IBAM")
