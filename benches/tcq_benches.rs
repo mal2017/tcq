@@ -14,6 +14,7 @@ use rust_htslib::bam;
 use rust_htslib::bam::Read;
 use std::path::Path;
 use tcq::handler::*;
+use tcq::runner::*;
 
 
 //use handler::{LibraryType, Nascent};
@@ -34,8 +35,14 @@ fn forward_read() {
 
 }
 
+fn run_whole_bam() {
+    run_through_bam(&"test/all.test.bam",&"test/xxxxx.test.dummy.bam",&"ZX",1,None,0,LibraryType::R1SENSE);
+}
+
+
 fn criterion_benchmark(c: &mut Criterion) {
     c.bench_function("forward_read()", |b| b.iter(|| forward_read()));
+    c.bench_function("whole_bam()", |b| b.iter(|| run_whole_bam()));
 }
 
 criterion_group!(benches, criterion_benchmark);

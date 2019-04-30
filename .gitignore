@@ -2,3 +2,4 @@
 /target
 **/*.rs.bk
 *~
+test/xxxxx.test.dummy.bam
