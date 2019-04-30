@@ -75,16 +75,27 @@ pub fn run_through_bam(
     // 4-annotate with conversion count (see tcq::handler)
     // 5-write read to bam
     info!("annotating reads with t>>c conversions...");
-    bam.records()
-        .into_iter()
-        .map(|a| a.unwrap())
-        .filter(|a| !a.is_unmapped())
-        .filter(|a| a.mapq() >= mq)
-        .map(|mut a| {
-            a.push_tc_conv_aux(tag.as_bytes(), &filt, &tid_lookup)
-                .unwrap();
-            a
-        })
-        .map(|a| obam.write(&a).unwrap())
-        .for_each(drop);
+
+    let mut r: bam::Record = bam::Record::new();
+
+    while let Ok(_r) = bam.read(&mut r) {
+        if r.is_unmapped() || r.mapq() < mq {
+            continue;
+        }
+        r.push_tc_conv_aux(tag.as_bytes(), &filt, &tid_lookup).unwrap();
+        obam.write(&r).unwrap()
+    }
+
+    // bam.records()
+    //     .into_iter()
+    //     .map(|a| a.unwrap())
+    //     .filter(|a| !a.is_unmapped())
+    //     .filter(|a| a.mapq() >= mq)
+    //     .map(|mut a| {
+    //         a.push_tc_conv_aux(tag.as_bytes(), &filt, &tid_lookup)
+    //             .unwrap();
+    //         a
+    //     })
+    //     .map(|a| obam.write(&a).unwrap())
+    //     .for_each(drop);
 }
