@@ -8,15 +8,6 @@ use std::collections::HashMap;
 use std::ops::Range;
 use std::str;
 
-
-/// Holds information about the library construction.
-#[derive(Debug)]
-pub enum LibraryType {
-    R1SENSE,
-    R1ANTISENSE,
-    UNSTRANDED,
-}
-
 /// Main engine for T>>C annotation.
 pub trait Nascent {
     fn is_possible_nascent(&self) -> bool;
@@ -25,33 +16,31 @@ pub trait Nascent {
 
     fn md_tag(&self) -> String;
 
-    fn cand_tc_mismatch_ref_pos(&self, lib: &LibraryType) -> Vec<i32>;
+    fn cand_tc_mismatch_ref_pos(&self) -> Vec<i32>;
 
-    fn cand_tc_mismatch_pos_tuples(&self, lib: &LibraryType) -> Vec<(i32, i32)>;
+    fn cand_tc_mismatch_pos_tuples(&self) -> Vec<(i32, i32)>;
 
     fn tc_conversion_pos(
         &self,
         f: &Option<ConvFilter>,
-        h: &HashMap<u32, String>,
-        lib: &LibraryType,
+        h: &HashMap<u32, String>
     ) -> Vec<((i32, i32), bool)>;
 
     fn tc_conversions(
         &self,
         f: &Option<ConvFilter>,
         h: &HashMap<u32, String>,
-        lib: &LibraryType,
     ) -> u32;
 
     fn push_tc_conv_aux(
         &mut self,
         auxtag: &[u8],
         f: &Option<ConvFilter>,
-        h: &HashMap<u32, String>,
-        lib: &LibraryType,
+        h: &HashMap<u32, String>
     ) -> Result<(), NascentMolError>;
 }
 
+/// Trait for bam::Record that implemements methods for checking T>C and A>G conversion rates.
 impl Nascent for Record {
     /// Initial filter that checks MD tag to see if an A or T mismatch exists.
     fn is_possible_nascent(&self) -> bool {
@@ -83,7 +72,7 @@ impl Nascent for Record {
     }
 
     /// Finds candidate T>C positions relative to reference.
-    fn cand_tc_mismatch_ref_pos(&self, lib: &LibraryType) -> Vec<i32> {
+    fn cand_tc_mismatch_ref_pos(&self) -> Vec<i32> {
         // Get expanded MD tag
         let exp_md = self.md_ref_seq();
 
@@ -93,8 +82,6 @@ impl Nascent for Record {
             static ref forward_re: Regex  = Regex::new(r"T").unwrap();
             static ref reverse_re: Regex  = Regex::new(r"A").unwrap();
         }
-
-        let is_r1 = self.is_first_in_template() || !(self.is_paired());
 
         match self.is_reverse() {
             true => reverse_re.find_iter(&exp_md)
@@ -108,12 +95,12 @@ impl Nascent for Record {
     }
 
     /// Makes a vector of tuples containing read and reference candidate T>>C positions.
-    fn cand_tc_mismatch_pos_tuples(&self, lib: &LibraryType) -> Vec<(i32, i32)> {
+    fn cand_tc_mismatch_pos_tuples(&self) -> Vec<(i32, i32)> {
         let cig = self.cigar();
         let start = self.pos() as i32;
 
         // from md tag so no softclips incl in ref pos,
-        let cand_ref_pos = self.cand_tc_mismatch_ref_pos(lib);
+        let cand_ref_pos = self.cand_tc_mismatch_ref_pos();
         // Make tuple with form (read, ref-pos)
         cand_ref_pos
             .iter()
@@ -132,10 +119,9 @@ impl Nascent for Record {
     fn tc_conversion_pos(
         &self,
         f: &Option<ConvFilter>,
-        h: &HashMap<u32, String>,
-        lib: &LibraryType,
+        h: &HashMap<u32, String>
     ) -> Vec<((i32, i32), bool)> {
-        let mut cand_pos_tuples = self.cand_tc_mismatch_pos_tuples(lib);
+        let mut cand_pos_tuples = self.cand_tc_mismatch_pos_tuples();
         let mut rng: Range<u32> = Range { start: 0, end: 0 };
         let chr = h.get(&(self.tid() as u32)).unwrap();
         let refpos = self.pos() as i32;
@@ -193,9 +179,8 @@ impl Nascent for Record {
         &self,
         f: &Option<ConvFilter>,
         h: &HashMap<u32, String>,
-        lib: &LibraryType,
     ) -> u32 {
-        self.tc_conversion_pos(f, h, lib).iter().count() as u32
+        self.tc_conversion_pos(f, h).iter().count() as u32
     }
 
     /// Edits tags to included T>>C counts.
@@ -203,8 +188,7 @@ impl Nascent for Record {
         &mut self,
         auxtag: &[u8],
         f: &Option<ConvFilter>,
-        h: &HashMap<u32, String>,
-        lib: &LibraryType,
+        h: &HashMap<u32, String>
     ) -> Result<(), NascentMolError> {
         if !self.is_possible_nascent() {
             match self.push_aux(auxtag, &Aux::Integer(0)) {
@@ -212,7 +196,7 @@ impl Nascent for Record {
                 Err(_i) => return Err(NascentMolError::Some),
             }
         }
-        let tc_aux = Aux::Integer(self.tc_conversions(f, h, lib) as i64);
+        let tc_aux = Aux::Integer(self.tc_conversions(f, h) as i64);
         match self.push_aux(auxtag, &tc_aux) {
             Ok(_i) => Ok(()),
             Err(_i) => Err(NascentMolError::Some),
@@ -248,14 +232,13 @@ pub fn tid_2_contig(h: &HeaderView) -> HashMap<u32, String> {
 /// Tests are performed on reads mapped to MM10.
 mod tests {
     use super::*;
-    use handler::{LibraryType, Nascent};
+    use handler::Nascent;
     use rust_htslib::bam;
     use rust_htslib::bam::Read;
     use std::path::Path;
 
     #[test]
     fn forward_read_insertions() {
-        let lib = LibraryType::R1SENSE;
         let bampath = Path::new("test/test_insertion_forward.myc.bam");
         let mut bam = bam::Reader::from_path(bampath).unwrap();
         let hdrv = bam.header().to_owned();
@@ -264,14 +247,13 @@ mod tests {
             .records()
             .map(|a| a.unwrap())
             .into_iter()
-            .map(|a| a.tc_conversions(&None, &tid_lookup, &lib))
+            .map(|a| a.tc_conversions(&None, &tid_lookup))
             .collect();
         assert_eq!(tcc[0], 2);
     }
 
     #[test]
     fn forward_read_deletions() {
-        let lib = LibraryType::R1SENSE;
         let bampath = Path::new("test/test_deletion_forward.myc.bam");
         let mut bam = bam::Reader::from_path(bampath).unwrap();
         let hdrv = bam.header().to_owned();
@@ -280,14 +262,13 @@ mod tests {
             .records()
             .map(|a| a.unwrap())
             .into_iter()
-            .map(|a| a.tc_conversions(&None, &tid_lookup, &lib))
+            .map(|a| a.tc_conversions(&None, &tid_lookup))
             .collect();
         assert_eq!(tcc[0], 1);
     }
 
     #[test]
     fn forward_read_intron() {
-        let lib = LibraryType::R1SENSE;
         let bampath = Path::new("test/test_intron_forward.myc.bam");
         let mut bam = bam::Reader::from_path(bampath).unwrap();
         let hdrv = bam.header().to_owned();
@@ -296,14 +277,13 @@ mod tests {
             .records()
             .map(|a| a.unwrap())
             .into_iter()
-            .map(|a| a.tc_conversions(&None, &tid_lookup, &lib))
+            .map(|a| a.tc_conversions(&None, &tid_lookup))
             .collect();
         assert_eq!(tcc[0], 5);
     }
 
     #[test]
     fn rev_read_insertions() {
-        let lib = LibraryType::R1SENSE;
         let bampath = Path::new("test/test_insertion_rev.brd2.bam");
         let mut bam = bam::Reader::from_path(bampath).unwrap();
         let hdrv = bam.header().to_owned();
@@ -312,14 +292,13 @@ mod tests {
             .records()
             .map(|a| a.unwrap())
             .into_iter()
-            .map(|a| a.tc_conversions(&None, &tid_lookup, &lib))
+            .map(|a| a.tc_conversions(&None, &tid_lookup))
             .collect();
         assert_eq!(tcc[0], 1);
     }
 
     #[test]
     fn rev_read_deletions() {
-        let lib = LibraryType::R1SENSE;
         let bampath = Path::new("test/test_deletion_rev.brd2.bam");
         let mut bam = bam::Reader::from_path(bampath).unwrap();
         let hdrv = bam.header().to_owned();
@@ -328,14 +307,13 @@ mod tests {
             .records()
             .map(|a| a.unwrap())
             .into_iter()
-            .map(|a| a.tc_conversions(&None, &tid_lookup, &lib))
+            .map(|a| a.tc_conversions(&None, &tid_lookup))
             .collect();
         assert_eq!(tcc[0], 2);
     }
 
     #[test]
     fn rev_read_intron() {
-        let lib = LibraryType::R1SENSE;
         let bampath = Path::new("test/test_intron_rev.brd2.bam");
         let mut bam = bam::Reader::from_path(bampath).unwrap();
         let hdrv = bam.header().to_owned();
@@ -344,7 +322,7 @@ mod tests {
             .records()
             .map(|a| a.unwrap())
             .into_iter()
-            .map(|a| a.tc_conversions(&None, &tid_lookup, &lib))
+            .map(|a| a.tc_conversions(&None, &tid_lookup))
             .collect();
         assert_eq!(tcc[0], 1);
     }
