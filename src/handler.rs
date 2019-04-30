@@ -8,6 +8,7 @@ use std::collections::HashMap;
 use std::ops::Range;
 use std::str;
 
+
 /// Holds information about the library construction.
 #[derive(Debug)]
 pub enum LibraryType {
@@ -89,65 +90,21 @@ impl Nascent for Record {
         // Create regex objects for what the reference base will be for a given
         // converted base. This is specific to the library orientation.
         lazy_static! { // for speeeeed
-            static ref r1_sense_r1_is_for_re: Regex  = Regex::new(r"T").unwrap();
-            static ref r1_sense_r1_is_rev_re: Regex  = Regex::new(r"A").unwrap();
-            static ref r1_antisense_r1_is_for_re: Regex  = Regex::new(r"A").unwrap();
-            static ref r1_antisense_r1_is_rev_re: Regex  = Regex::new(r"T").unwrap();
-            static ref unstranded_re: Regex  = Regex::new(r"[AT]").unwrap();
+            static ref forward_re: Regex  = Regex::new(r"T").unwrap();
+            static ref reverse_re: Regex  = Regex::new(r"A").unwrap();
         }
 
         let is_r1 = self.is_first_in_template() || !(self.is_paired());
 
-        match lib {
-            LibraryType::R1SENSE => match self.is_reverse() {
-                true => match is_r1 {
-                    true => r1_sense_r1_is_rev_re
-                        .find_iter(&exp_md)
-                        .map(|a| a.start() as i32)
-                        .collect(),
-                    false => r1_sense_r1_is_for_re
-                        .find_iter(&exp_md)
-                        .map(|a| a.start() as i32)
-                        .collect(),
-                },
-                false => match is_r1 {
-                    true => r1_sense_r1_is_for_re
-                        .find_iter(&exp_md)
-                        .map(|a| a.start() as i32)
-                        .collect(),
-                    false => r1_sense_r1_is_rev_re
-                        .find_iter(&exp_md)
-                        .map(|a| a.start() as i32)
-                        .collect(),
-                },
-            },
-            LibraryType::R1ANTISENSE => match self.is_reverse() {
-                true => match is_r1 {
-                    true => r1_antisense_r1_is_rev_re
-                        .find_iter(&exp_md)
-                        .map(|a| a.start() as i32)
-                        .collect(),
-                    false => r1_antisense_r1_is_for_re
-                        .find_iter(&exp_md)
-                        .map(|a| a.start() as i32)
-                        .collect(),
-                },
-                false => match is_r1 {
-                    true => r1_antisense_r1_is_for_re
-                        .find_iter(&exp_md)
-                        .map(|a| a.start() as i32)
-                        .collect(),
-                    false => r1_antisense_r1_is_rev_re
-                        .find_iter(&exp_md)
-                        .map(|a| a.start() as i32)
-                        .collect(),
-                },
-            },
-            LibraryType::UNSTRANDED => unstranded_re
-                .find_iter(&exp_md)
-                .map(|a| a.start() as i32)
-                .collect(),
+        match self.is_reverse() {
+            true => reverse_re.find_iter(&exp_md)
+                           .map(|a| a.start() as i32)
+                           .collect(),
+            false => forward_re.find_iter(&exp_md)
+                           .map(|a| a.start() as i32)
+                           .collect(),
         }
+
     }
 
     /// Makes a vector of tuples containing read and reference candidate T>>C positions.
@@ -205,33 +162,16 @@ impl Nascent for Record {
             }
             None => cand_pos_tuples,
         };
+
+        //println!("{:?}", cand_pos_tuples);
         // ABOVE THIS IS THE FILTERING PORTION
         let read_seq = self.seq();
 
         let is_r1 = self.is_first_in_template() || !(self.is_paired());
 
-        let conv_target: Vec<u8> = match lib {
-            LibraryType::R1SENSE => match self.is_reverse() {
-                true => match is_r1 {
-                    true => vec![b'G'],
-                    false => vec![b'C'],
-                },
-                false => match is_r1 {
-                    true => vec![b'C'],
-                    false => vec![b'G'],
-                },
-            },
-            LibraryType::R1ANTISENSE => match self.is_reverse() {
-                true => match is_r1 {
-                    true => vec![b'C'],
-                    false => vec![b'G'],
-                },
-                false => match is_r1 {
-                    true => vec![b'G'],
-                    false => vec![b'C'],
-                },
-            },
-            LibraryType::UNSTRANDED => vec![b'G', b'C'],
+        let conv_target: Vec<u8> = match self.is_reverse() {
+                true => vec![b'G'],
+                false => vec![b'C'],
         };
 
         let enc_base_hit_itr = cand_pos_tuples
@@ -305,7 +245,8 @@ pub fn tid_2_contig(h: &HeaderView) -> HashMap<u32, String> {
 }
 
 #[cfg(test)]
-mod tests_plus_strand_cds {
+/// Tests are performed on reads mapped to MM10.
+mod tests {
     use super::*;
     use handler::{LibraryType, Nascent};
     use rust_htslib::bam;
@@ -313,9 +254,9 @@ mod tests_plus_strand_cds {
     use std::path::Path;
 
     #[test]
-    fn handle_r1s_forward_read_insertions() {
+    fn forward_read_insertions() {
         let lib = LibraryType::R1SENSE;
-        let bampath = Path::new("test/insertion_forward.r1s.myc.bam");
+        let bampath = Path::new("test/test_insertion_forward.myc.bam");
         let mut bam = bam::Reader::from_path(bampath).unwrap();
         let hdrv = bam.header().to_owned();
         let tid_lookup = tid_2_contig(&hdrv);
@@ -329,9 +270,9 @@ mod tests_plus_strand_cds {
     }
 
     #[test]
-    fn handle_r1s_forward_read_deletions() {
+    fn forward_read_deletions() {
         let lib = LibraryType::R1SENSE;
-        let bampath = Path::new("test/deletion_forward.r1s.myc.bam");
+        let bampath = Path::new("test/test_deletion_forward.myc.bam");
         let mut bam = bam::Reader::from_path(bampath).unwrap();
         let hdrv = bam.header().to_owned();
         let tid_lookup = tid_2_contig(&hdrv);
@@ -345,9 +286,9 @@ mod tests_plus_strand_cds {
     }
 
     #[test]
-    fn handle_r1s_forward_read_intron() {
+    fn forward_read_intron() {
         let lib = LibraryType::R1SENSE;
-        let bampath = Path::new("test/intron_forward.r1s.myc.bam");
+        let bampath = Path::new("test/test_intron_forward.myc.bam");
         let mut bam = bam::Reader::from_path(bampath).unwrap();
         let hdrv = bam.header().to_owned();
         let tid_lookup = tid_2_contig(&hdrv);
@@ -361,25 +302,9 @@ mod tests_plus_strand_cds {
     }
 
     #[test]
-    fn handle_r1as_forward_read_insertions() {
-        let lib = LibraryType::R1ANTISENSE;
-        let bampath = Path::new("test/insertion_forward.r1as.myc.bam");
-        let mut bam = bam::Reader::from_path(bampath).unwrap();
-        let hdrv = bam.header().to_owned();
-        let tid_lookup = tid_2_contig(&hdrv);
-        let tcc: Vec<u32> = bam
-            .records()
-            .map(|a| a.unwrap())
-            .into_iter()
-            .map(|a| a.tc_conversions(&None, &tid_lookup, &lib))
-            .collect();
-        assert_eq!(tcc[0], 2);
-    }
-
-    #[test]
-    fn handle_r1as_forward_read_deletions() {
-        let lib = LibraryType::R1ANTISENSE;
-        let bampath = Path::new("test/deletion_forward.r1as.myc.bam");
+    fn rev_read_insertions() {
+        let lib = LibraryType::R1SENSE;
+        let bampath = Path::new("test/test_insertion_rev.brd2.bam");
         let mut bam = bam::Reader::from_path(bampath).unwrap();
         let hdrv = bam.header().to_owned();
         let tid_lookup = tid_2_contig(&hdrv);
@@ -393,9 +318,9 @@ mod tests_plus_strand_cds {
     }
 
     #[test]
-    fn handle_r1as_forward_read_intron() {
-        let lib = LibraryType::R1ANTISENSE;
-        let bampath = Path::new("test/intron_forward.r1as.myc.bam");
+    fn rev_read_deletions() {
+        let lib = LibraryType::R1SENSE;
+        let bampath = Path::new("test/test_deletion_rev.brd2.bam");
         let mut bam = bam::Reader::from_path(bampath).unwrap();
         let hdrv = bam.header().to_owned();
         let tid_lookup = tid_2_contig(&hdrv);
@@ -405,15 +330,13 @@ mod tests_plus_strand_cds {
             .into_iter()
             .map(|a| a.tc_conversions(&None, &tid_lookup, &lib))
             .collect();
-        assert_eq!(tcc[0], 5);
+        assert_eq!(tcc[0], 2);
     }
 
-    // #### reverse strand reads ####
-
     #[test]
-    fn handle_r1s_rev_read_insertions() {
+    fn rev_read_intron() {
         let lib = LibraryType::R1SENSE;
-        let bampath = Path::new("test/insertion_rev.r1s.myc.bam");
+        let bampath = Path::new("test/test_intron_rev.brd2.bam");
         let mut bam = bam::Reader::from_path(bampath).unwrap();
         let hdrv = bam.header().to_owned();
         let tid_lookup = tid_2_contig(&hdrv);
@@ -426,286 +349,4 @@ mod tests_plus_strand_cds {
         assert_eq!(tcc[0], 1);
     }
 
-    #[test]
-    fn handle_r1s_rev_read_deletions() {
-        let lib = LibraryType::R1SENSE;
-        let bampath = Path::new("test/deletion_rev.r1s.myc.bam");
-        let mut bam = bam::Reader::from_path(bampath).unwrap();
-        let hdrv = bam.header().to_owned();
-        let tid_lookup = tid_2_contig(&hdrv);
-        let tcc: Vec<u32> = bam
-            .records()
-            .map(|a| a.unwrap())
-            .into_iter()
-            .map(|a| a.tc_conversions(&None, &tid_lookup, &lib))
-            .collect();
-        assert_eq!(tcc[0], 2);
-    }
-
-    #[test]
-    fn handle_r1s_rev_read_intron() {
-        let lib = LibraryType::R1SENSE;
-        let bampath = Path::new("test/intron_rev.r1s.myc.bam");
-        let mut bam = bam::Reader::from_path(bampath).unwrap();
-        let hdrv = bam.header().to_owned();
-        let tid_lookup = tid_2_contig(&hdrv);
-        let tcc: Vec<u32> = bam
-            .records()
-            .map(|a| a.unwrap())
-            .into_iter()
-            .map(|a| a.tc_conversions(&None, &tid_lookup, &lib))
-            .collect();
-        assert_eq!(tcc[0], 2);
-    }
-
-    #[test]
-    fn handle_r1as_rev_read_insertions() {
-        let lib = LibraryType::R1ANTISENSE;
-        let bampath = Path::new("test/insertion_rev.r1as.myc.bam");
-        let mut bam = bam::Reader::from_path(bampath).unwrap();
-        let hdrv = bam.header().to_owned();
-        let tid_lookup = tid_2_contig(&hdrv);
-        let tcc: Vec<u32> = bam
-            .records()
-            .map(|a| a.unwrap())
-            .into_iter()
-            .map(|a| a.tc_conversions(&None, &tid_lookup, &lib))
-            .collect();
-        assert_eq!(tcc[0], 1);
-    }
-
-    #[test]
-    fn handle_r1as_rev_read_deletions() {
-        let lib = LibraryType::R1ANTISENSE;
-        let bampath = Path::new("test/deletion_rev.r1as.myc.bam");
-        let mut bam = bam::Reader::from_path(bampath).unwrap();
-        let hdrv = bam.header().to_owned();
-        let tid_lookup = tid_2_contig(&hdrv);
-        let tcc: Vec<u32> = bam
-            .records()
-            .map(|a| a.unwrap())
-            .into_iter()
-            .map(|a| a.tc_conversions(&None, &tid_lookup, &lib))
-            .collect();
-        assert_eq!(tcc[0], 2);
-    }
-
-    #[test]
-    fn handle_r1as_rev_read_intron() {
-        let lib = LibraryType::R1ANTISENSE;
-        let bampath = Path::new("test/intron_rev.r1as.myc.bam");
-        let mut bam = bam::Reader::from_path(bampath).unwrap();
-        let hdrv = bam.header().to_owned();
-        let tid_lookup = tid_2_contig(&hdrv);
-        let tcc: Vec<u32> = bam
-            .records()
-            .map(|a| a.unwrap())
-            .into_iter()
-            .map(|a| a.tc_conversions(&None, &tid_lookup, &lib))
-            .collect();
-        assert_eq!(tcc[0], 2);
-    }
-}
-
-#[cfg(test)]
-mod tests_minus_strand_cds {
-    use super::*;
-    use handler::{LibraryType, Nascent};
-    use rust_htslib::bam;
-    use rust_htslib::bam::Read;
-    use std::path::Path;
-
-    #[test]
-    fn handle_r1s_forward_read_insertions() {
-        let lib = LibraryType::R1SENSE;
-        let bampath = Path::new("test/insertion_forward.r1s.brd2.bam");
-        let mut bam = bam::Reader::from_path(bampath).unwrap();
-        let hdrv = bam.header().to_owned();
-        let tid_lookup = tid_2_contig(&hdrv);
-        let tcc: Vec<u32> = bam
-            .records()
-            .map(|a| a.unwrap())
-            .into_iter()
-            .map(|a| a.tc_conversions(&None, &tid_lookup, &lib))
-            .collect();
-        assert_eq!(tcc[0], 2);
-    }
-
-    #[test]
-    fn handle_r1s_forward_read_deletions() {
-        let lib = LibraryType::R1SENSE;
-        let bampath = Path::new("test/deletion_forward.r1s.brd2.bam");
-        let mut bam = bam::Reader::from_path(bampath).unwrap();
-        let hdrv = bam.header().to_owned();
-        let tid_lookup = tid_2_contig(&hdrv);
-        let tcc: Vec<u32> = bam
-            .records()
-            .map(|a| a.unwrap())
-            .into_iter()
-            .map(|a| a.tc_conversions(&None, &tid_lookup, &lib))
-            .collect();
-        assert_eq!(tcc[0], 1);
-    }
-
-    #[test]
-    fn handle_r1s_forward_read_intron() {
-        let lib = LibraryType::R1SENSE;
-        let bampath = Path::new("test/intron_forward.r1s.brd2.bam");
-        let mut bam = bam::Reader::from_path(bampath).unwrap();
-        let hdrv = bam.header().to_owned();
-        let tid_lookup = tid_2_contig(&hdrv);
-        let tcc: Vec<u32> = bam
-            .records()
-            .map(|a| a.unwrap())
-            .into_iter()
-            .map(|a| a.tc_conversions(&None, &tid_lookup, &lib))
-            .collect();
-        assert_eq!(tcc[0], 3);
-    }
-
-    #[test]
-    fn handle_r1as_forward_read_insertions() {
-        let lib = LibraryType::R1ANTISENSE;
-        let bampath = Path::new("test/insertion_forward.r1as.brd2.bam");
-        let mut bam = bam::Reader::from_path(bampath).unwrap();
-        let hdrv = bam.header().to_owned();
-        let tid_lookup = tid_2_contig(&hdrv);
-        let tcc: Vec<u32> = bam
-            .records()
-            .map(|a| a.unwrap())
-            .into_iter()
-            .map(|a| a.tc_conversions(&None, &tid_lookup, &lib))
-            .collect();
-        assert_eq!(tcc[0], 2);
-    }
-
-    #[test]
-    fn handle_r1as_forward_read_deletions() {
-        let lib = LibraryType::R1ANTISENSE;
-        let bampath = Path::new("test/deletion_forward.r1as.brd2.bam");
-        let mut bam = bam::Reader::from_path(bampath).unwrap();
-        let hdrv = bam.header().to_owned();
-        let tid_lookup = tid_2_contig(&hdrv);
-        let tcc: Vec<u32> = bam
-            .records()
-            .map(|a| a.unwrap())
-            .into_iter()
-            .map(|a| a.tc_conversions(&None, &tid_lookup, &lib))
-            .collect();
-        assert_eq!(tcc[0], 1);
-    }
-
-    #[test]
-    fn handle_r1as_forward_read_intron() {
-        let lib = LibraryType::R1ANTISENSE;
-        let bampath = Path::new("test/intron_forward.r1as.brd2.bam");
-        let mut bam = bam::Reader::from_path(bampath).unwrap();
-        let hdrv = bam.header().to_owned();
-        let tid_lookup = tid_2_contig(&hdrv);
-        let tcc: Vec<u32> = bam
-            .records()
-            .map(|a| a.unwrap())
-            .into_iter()
-            .map(|a| a.tc_conversions(&None, &tid_lookup, &lib))
-            .collect();
-        assert_eq!(tcc[0], 3);
-    }
-
-    // #### reverse strand reads ####
-
-    #[test]
-    fn handle_r1s_rev_read_insertions() {
-        let lib = LibraryType::R1SENSE;
-        let bampath = Path::new("test/insertion_rev.r1s.brd2.bam");
-        let mut bam = bam::Reader::from_path(bampath).unwrap();
-        let hdrv = bam.header().to_owned();
-        let tid_lookup = tid_2_contig(&hdrv);
-        let tcc: Vec<u32> = bam
-            .records()
-            .map(|a| a.unwrap())
-            .into_iter()
-            .map(|a| a.tc_conversions(&None, &tid_lookup, &lib))
-            .collect();
-        assert_eq!(tcc[0], 1);
-    }
-
-    #[test]
-    fn handle_r1s_rev_read_deletions() {
-        let lib = LibraryType::R1SENSE;
-        let bampath = Path::new("test/deletion_rev.r1s.brd2.bam");
-        let mut bam = bam::Reader::from_path(bampath).unwrap();
-        let hdrv = bam.header().to_owned();
-        let tid_lookup = tid_2_contig(&hdrv);
-        let tcc: Vec<u32> = bam
-            .records()
-            .map(|a| a.unwrap())
-            .into_iter()
-            .map(|a| a.tc_conversions(&None, &tid_lookup, &lib))
-            .collect();
-        assert_eq!(tcc[0], 2);
-    }
-
-    #[test]
-    fn handle_r1s_rev_read_intron() {
-        let lib = LibraryType::R1SENSE;
-        let bampath = Path::new("test/intron_rev.r1s.brd2.bam");
-        let mut bam = bam::Reader::from_path(bampath).unwrap();
-        let hdrv = bam.header().to_owned();
-        let tid_lookup = tid_2_contig(&hdrv);
-        let tcc: Vec<u32> = bam
-            .records()
-            .map(|a| a.unwrap())
-            .into_iter()
-            .map(|a| a.tc_conversions(&None, &tid_lookup, &lib))
-            .collect();
-        assert_eq!(tcc[0], 4);
-    }
-
-    #[test]
-    fn handle_r1as_rev_read_insertions() {
-        let lib = LibraryType::R1ANTISENSE;
-        let bampath = Path::new("test/insertion_rev.r1as.brd2.bam");
-        let mut bam = bam::Reader::from_path(bampath).unwrap();
-        let hdrv = bam.header().to_owned();
-        let tid_lookup = tid_2_contig(&hdrv);
-        let tcc: Vec<u32> = bam
-            .records()
-            .map(|a| a.unwrap())
-            .into_iter()
-            .map(|a| a.tc_conversions(&None, &tid_lookup, &lib))
-            .collect();
-        assert_eq!(tcc[0], 1);
-    }
-
-    #[test]
-    fn handle_r1as_rev_read_deletions() {
-        let lib = LibraryType::R1ANTISENSE;
-        let bampath = Path::new("test/deletion_rev.r1as.brd2.bam");
-        let mut bam = bam::Reader::from_path(bampath).unwrap();
-        let hdrv = bam.header().to_owned();
-        let tid_lookup = tid_2_contig(&hdrv);
-        let tcc: Vec<u32> = bam
-            .records()
-            .map(|a| a.unwrap())
-            .into_iter()
-            .map(|a| a.tc_conversions(&None, &tid_lookup, &lib))
-            .collect();
-        assert_eq!(tcc[0], 2);
-    }
-
-    #[test]
-    fn handle_r1as_rev_read_intron() {
-        let lib = LibraryType::R1ANTISENSE;
-        let bampath = Path::new("test/intron_rev.r1as.brd2.bam");
-        let mut bam = bam::Reader::from_path(bampath).unwrap();
-        let hdrv = bam.header().to_owned();
-        let tid_lookup = tid_2_contig(&hdrv);
-        let tcc: Vec<u32> = bam
-            .records()
-            .map(|a| a.unwrap())
-            .into_iter()
-            .map(|a| a.tc_conversions(&None, &tid_lookup, &lib))
-            .collect();
-        assert_eq!(tcc[0], 4);
-    }
 }
