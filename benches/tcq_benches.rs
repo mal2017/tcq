@@ -21,8 +21,12 @@ use tcq::runner::*;
 
 
 fn forward_read() {
+<<<<<<< HEAD
     let lib = LibraryType::R1SENSE;
     let bampath = Path::new("test/insertion_forward.r1s.myc.bam");
+=======
+    let bampath = Path::new("test/test_insertion_forward.myc.bam");
+>>>>>>> dev
     let mut bam = bam::Reader::from_path(bampath).unwrap();
     let hdrv = bam.header().to_owned();
     let tid_lookup = tid_2_contig(&hdrv);
@@ -30,13 +34,21 @@ fn forward_read() {
         .records()
         .map(|a| a.unwrap())
         .into_iter()
+<<<<<<< HEAD
         .map(|a| a.tc_conversions(&None, &tid_lookup, &lib))
+=======
+        .map(|a| a.tc_conversions(&None, &tid_lookup))
+>>>>>>> dev
         .collect();
 
 }
 
 fn run_whole_bam() {
+<<<<<<< HEAD
     run_through_bam(&"test/all.test.bam",&"test/xxxxx.test.dummy.bam",&"ZX",1,None,0,LibraryType::R1SENSE);
+=======
+    run_through_bam(&"test/all.test.bam",&"test/xxxxx.test.dummy.bam",&"ZX",1,None,0);
+>>>>>>> dev
 }
 
 

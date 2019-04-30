@@ -1,6 +1,5 @@
 use super::filter::*;
 use super::handler::tid_2_contig;
-use super::handler::LibraryType;
 use super::handler::Nascent;
 use rust_htslib::bam;
 use rust_htslib::prelude::*;
@@ -21,8 +20,7 @@ use std::str;
 /// # Example (compiled, not run)
 /// ```rust,no_run
 /// use tcq::runner;
-/// use tcq::handler::LibraryType::R1ANTISENSE;
-/// runner::run_through_bam("in.bam", "out.bam", "XZ", 4, Some("filt.bcf"), 30, R1ANTISENSE);
+/// runner::run_through_bam("in.bam", "out.bam", "XZ", 4, Some("filt.bcf"), 30);
 /// ```
 pub fn run_through_bam(
     ib: &str,
@@ -31,7 +29,6 @@ pub fn run_through_bam(
     p: usize,
     blk: Option<&str>,
     mq: u8,
-    library: LibraryType,
 ) {
     info!("beginning run...");
 
@@ -78,16 +75,27 @@ pub fn run_through_bam(
     // 4-annotate with conversion count (see tcq::handler)
     // 5-write read to bam
     info!("annotating reads with t>>c conversions...");
-    bam.records()
-        .into_iter()
-        .map(|a| a.unwrap())
-        .filter(|a| !a.is_unmapped())
-        .filter(|a| a.mapq() >= mq)
-        .map(|mut a| {
-            a.push_tc_conv_aux(tag.as_bytes(), &filt, &tid_lookup, &library)
-                .unwrap();
-            a
-        })
-        .map(|a| obam.write(&a).unwrap())
-        .for_each(drop);
+
+    let mut r: bam::Record = bam::Record::new();
+
+    while let Ok(_r) = bam.read(&mut r) {
+        if r.is_unmapped() || r.mapq() < mq {
+            continue;
+        }
+        r.push_tc_conv_aux(tag.as_bytes(), &filt, &tid_lookup).unwrap();
+        obam.write(&r).unwrap()
+    }
+
+    // bam.records()
+    //     .into_iter()
+    //     .map(|a| a.unwrap())
+    //     .filter(|a| !a.is_unmapped())
+    //     .filter(|a| a.mapq() >= mq)
+    //     .map(|mut a| {
+    //         a.push_tc_conv_aux(tag.as_bytes(), &filt, &tid_lookup)
+    //             .unwrap();
+    //         a
+    //     })
+    //     .map(|a| obam.write(&a).unwrap())
+    //     .for_each(drop);
 }
