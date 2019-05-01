@@ -86,16 +86,4 @@ pub fn run_through_bam(
         obam.write(&r).unwrap()
     }
 
-    // bam.records()
-    //     .into_iter()
-    //     .map(|a| a.unwrap())
-    //     .filter(|a| !a.is_unmapped())
-    //     .filter(|a| a.mapq() >= mq)
-    //     .map(|mut a| {
-    //         a.push_tc_conv_aux(tag.as_bytes(), &filt, &tid_lookup)
-    //             .unwrap();
-    //         a
-    //     })
-    //     .map(|a| obam.write(&a).unwrap())
-    //     .for_each(drop);
 }
